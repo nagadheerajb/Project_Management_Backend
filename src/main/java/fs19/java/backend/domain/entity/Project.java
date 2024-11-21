@@ -1,12 +1,9 @@
 package fs19.java.backend.domain.entity;
 
+import lombok.*;
+
 import java.time.ZonedDateTime;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor

@@ -34,30 +34,49 @@ public class CommentServiceImpl implements CommentService {
             throw new IllegalArgumentException("CommentRequestDTO must not be null");
         }
 
+        System.out.println("Creating comment with content: " + commentRequestDTO.getContent());
+
         Comment comment = commentMapper.toEntity(commentRequestDTO);
         comment.setId(UUID.randomUUID());
         comment.setCreatedDate(ZonedDateTime.now());
         commentRepository.save(comment);
-        return commentMapper.toDTO(comment);
+
+        CommentResponseDTO responseDTO = commentMapper.toDTO(comment);
+        System.out.println("Created comment ID: " + responseDTO.getId());
+        System.out.println("Created comment content: " + responseDTO.getContent());
+
+        return responseDTO;
     }
 
     @Override
     public CommentResponseDTO updateComment(UUID id, CommentUpdateDTO commentUpdateDTO) {
+        System.out.println("Updating comment ID: " + id);
+        System.out.println("New content: " + commentUpdateDTO.getContent());
+
         Comment existingComment = commentRepository.findById(id)
                 .orElseThrow(() -> new CommentNotFoundException(String.format(COMMENT_NOT_FOUND_MESSAGE, id)));
+
         existingComment.setContent(commentUpdateDTO.getContent());
         commentRepository.save(existingComment);
-        return commentMapper.toDTO(existingComment);
+
+        CommentResponseDTO responseDTO = commentMapper.toDTO(existingComment);
+        System.out.println("Updated comment content: " + responseDTO.getContent());
+
+        return responseDTO;
     }
 
     @Override
     public CommentResponseDTO getCommentById(UUID id) {
-                Comment comment = commentRepository.findById(id)
+        System.out.println("Fetching comment ID: " + id);
+
+        Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new CommentNotFoundException(String.format(COMMENT_NOT_FOUND_MESSAGE, id)));
-        return commentMapper.toDTO(comment);
 
+        CommentResponseDTO responseDTO = commentMapper.toDTO(comment);
+        System.out.println("Fetched comment content: " + responseDTO.getContent());
+
+        return responseDTO;
     }
-
 
     @Override
     public List<CommentResponseDTO> getAllComments() {

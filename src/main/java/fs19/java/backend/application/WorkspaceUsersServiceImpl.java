@@ -7,10 +7,11 @@ import fs19.java.backend.application.service.WorkspaceUsersService;
 import fs19.java.backend.domain.entity.WorkspaceUsers;
 import fs19.java.backend.infrastructure.WorkspaceUsersRepoImpl;
 import fs19.java.backend.presentation.shared.exception.WorkspaceUserNotFoundException;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
 
 @Service
 public class WorkspaceUsersServiceImpl implements WorkspaceUsersService {

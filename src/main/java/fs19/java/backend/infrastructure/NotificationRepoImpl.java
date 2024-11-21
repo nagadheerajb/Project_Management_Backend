@@ -1,29 +1,29 @@
 package fs19.java.backend.infrastructure;
 
-import fs19.java.backend.domain.abstraction.CompanyRepository;
-import fs19.java.backend.domain.entity.Company;
+import fs19.java.backend.domain.abstraction.NotificationRepository;
+import fs19.java.backend.domain.entity.Notification;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
-public class CompanyRepoImpl implements CompanyRepository {
+public class NotificationRepoImpl implements NotificationRepository {
 
-    private final Map<UUID, Company> inMemoryDatabase = new ConcurrentHashMap<>();
+    private final Map<UUID, Notification> inMemoryDatabase = new ConcurrentHashMap<>();
 
     @Override
-    public void save(Company company) {
-        inMemoryDatabase.put(company.getId(), company);
+    public void save(Notification notification) {
+        inMemoryDatabase.put(notification.getId(), notification);
     }
 
     @Override
-    public Optional<Company> findById(UUID id) {
+    public Optional<Notification> findById(UUID id) {
         return Optional.ofNullable(inMemoryDatabase.get(id));
     }
 
     @Override
-    public List<Company> findAll() {
+    public List<Notification> findAll() {
         return new ArrayList<>(inMemoryDatabase.values());
     }
 

@@ -1,11 +1,8 @@
 package fs19.java.backend.application.dto.project;
 
+import lombok.*;
+
 import java.time.ZonedDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Setter

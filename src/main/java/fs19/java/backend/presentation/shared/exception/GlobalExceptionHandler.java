@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GlobalResponse<Void>> handleProjectNotFoundException(ProjectNotFoundException ex) {
         ErrorItem error = new ErrorItem(ex.getMessage());
         GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_FOUND.value(),
-            List.of(error));
+                List.of(error));
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
@@ -69,8 +69,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GlobalResponse<Void>> handleProjectValidationException(ProjectValidationException ex) {
         ErrorItem error = new ErrorItem(ex.getMessage());
         GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.BAD_REQUEST.value(),
-            List.of(error));
+                List.of(error));
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(WorkspaceUserNotFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleWorkspaceUserNotFoundException(WorkspaceUserNotFoundException ex) {
+        ErrorItem error = new ErrorItem(ex.getMessage());
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_FOUND.value(),
+                List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
 
@@ -80,12 +88,11 @@ public class GlobalExceptionHandler {
         GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_FOUND.value(), List.of(error));
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
-    @ExceptionHandler(WorkspaceUserNotFoundException.class)
-    public ResponseEntity<GlobalResponse<Void>> handleWorkspaceUserNotFoundException(WorkspaceUserNotFoundException ex) {
+
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> NotificationNotFoundException(NotificationNotFoundException ex) {
         ErrorItem error = new ErrorItem(ex.getMessage());
-        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_FOUND.value(),
-            List.of(error));
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_FOUND.value(), List.of(error));
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
-
 }

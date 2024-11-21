@@ -2,6 +2,7 @@ package fs19.java.backend.application.service;
 
 import fs19.java.backend.application.dto.workspace_users.WorkspaceUsersRequestDTO;
 import fs19.java.backend.application.dto.workspace_users.WorkspaceUsersResponseDTO;
+
 import java.util.List;
 import java.util.UUID;
 

@@ -2,7 +2,6 @@ package fs19.java.backend.application.mapper;
 
 import fs19.java.backend.application.dto.project.ProjectCreateDTO;
 import fs19.java.backend.application.dto.project.ProjectReadDTO;
-import fs19.java.backend.application.dto.project.ProjectUpdateDTO;
 import fs19.java.backend.domain.entity.Project;
 import lombok.experimental.UtilityClass;
 
