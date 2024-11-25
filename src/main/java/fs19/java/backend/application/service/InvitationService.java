@@ -8,14 +8,13 @@ import java.util.List;
 import java.util.UUID;
 
 public interface InvitationService {
-    InvitationResponseDTO createAnInvitation(@Valid InvitationRequestDTO invitationRequestDTO);
+    InvitationResponseDTO save(@Valid InvitationRequestDTO invitationRequestDTO);
 
-    InvitationResponseDTO updateInvitation(UUID invitationId, @Valid InvitationRequestDTO invitationRequestDTO);
+    InvitationResponseDTO update(UUID invitationId, @Valid InvitationRequestDTO invitationRequestDTO);
 
-    InvitationResponseDTO deleteInvitation(UUID invitationId);
+    InvitationResponseDTO delete(UUID invitationId);
 
-    List<InvitationResponseDTO> getInvitations();
+    List<InvitationResponseDTO> findAll();
 
-
-    InvitationResponseDTO getInvitationById(UUID invitationId);
+    InvitationResponseDTO findById(UUID invitationId);
 }

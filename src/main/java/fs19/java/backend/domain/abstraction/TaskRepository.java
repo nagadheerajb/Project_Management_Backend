@@ -9,18 +9,19 @@ import java.util.UUID;
 
 public interface TaskRepository {
 
+    Task save(Task task);
 
-    Task createTask(TaskRequestDTO taskRequestDTO, User user, User assignedUser);
+    Task update(UUID taskId, TaskRequestDTO taskRequestDTO, User assignedUser);
 
-    Task updateTask(UUID taskId, TaskRequestDTO taskRequestDTO, User assignedUser);
+    Task delete(UUID taskId);
 
-    Task deleteTask(UUID taskId);
+    List<Task> findAll();
 
-    List<Task> getTasks();
+    Task findById(UUID taskId);
 
-    Task getTaskById(UUID taskId);
+    List<Task> findByAssignedUserId(UUID userId);
 
-    List<Task> getTasksByAssignedUserId(UUID userId);
+    List<Task> findByCreatedUserId(UUID createdUserId);
 
-    List<Task> getTasksByCreatedUserId(UUID createdUserId);
+
 }

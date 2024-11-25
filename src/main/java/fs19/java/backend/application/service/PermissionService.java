@@ -12,16 +12,18 @@ import java.util.UUID;
  */
 public interface PermissionService {
 
-    PermissionResponseDTO createPermission(@Valid PermissionRequestDTO permissionRequestDTO);
+    PermissionResponseDTO save(@Valid PermissionRequestDTO permissionRequestDTO);
 
-    PermissionResponseDTO updatePermission(UUID permissionId, @Valid PermissionRequestDTO permissionRequestDTO);
+    PermissionResponseDTO update(UUID permissionId, @Valid PermissionRequestDTO permissionRequestDTO);
 
-    PermissionResponseDTO deletePermission(UUID permissionId);
+    PermissionResponseDTO delete(UUID permissionId);
 
-    List<PermissionResponseDTO> getPermissions();
+    List<PermissionResponseDTO> getAll();
 
-    PermissionResponseDTO getPermissionById(UUID permissionId);
+    PermissionResponseDTO findById(UUID permissionId);
 
-    PermissionResponseDTO getPermissionByName(String name);
+    PermissionResponseDTO findByName(String name);
+
+    boolean existsById(UUID permissionId);
 
 }

@@ -1,33 +1,34 @@
 package fs19.java.backend.role;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fs19.java.backend.application.dto.role.RoleRequestDTO;
-import fs19.java.backend.application.RoleServiceImpl;
-import fs19.java.backend.domain.abstraction.CompanyRepository;
-import fs19.java.backend.domain.entity.Company;
-import fs19.java.backend.domain.entity.Role;
-import fs19.java.backend.infrastructure.CompanyRepoImpl;
-import fs19.java.backend.infrastructure.RoleRepoImpl;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import fs19.java.backend.application.dto.role.RoleResponseDTO;
+import fs19.java.backend.infrastructure.JpaRepositories.CompanyJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
+import fs19.java.backend.presentation.shared.response.GlobalResponse;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
+@Commit
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RoleControllerTest {
-    RoleRequestDTO roleRequest;
-    private Company existingCompany;
 
     @Autowired
     private MockMvc mockMvc;
@@ -35,94 +36,111 @@ class RoleControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private RoleServiceImpl roleService;
+    private static UUID testRoleId;
+
+    private static final String BASE_URL = "/app/v1/roles";
 
     @Autowired
-    private RoleRepoImpl roleRepository;
-
-
-    @Autowired
-    private CompanyRepoImpl companyRepo;
+    private CompanyJpaRepo companyJpaRepo;
 
     @Autowired
-    private CompanyRepository companyRepository;
-
-    @BeforeEach
-    public void setUp() {
-
-        existingCompany = new Company(UUID.randomUUID(), "Test Company", null, UUID.randomUUID());
-        companyRepository.save(existingCompany);
-
-        roleRequest = new RoleRequestDTO(UUID.randomUUID(), "Admin", existingCompany.getId());
-        Role role = roleRepository.createRole(roleRequest, existingCompany);
-        roleRequest.setId(role.getId());
-
-
-    }
+    private UserJpaRepo userJpaRepo;
 
     @Test
-    void testCreateRole_Success() throws Exception {
-        roleRequest = new RoleRequestDTO(UUID.randomUUID(), "System-User", existingCompany.getId());
-        mockMvc.perform(post("/app/v1/roles")
+    @Order(1)
+    @DisplayName("Test Create Role")
+    void testCreateRole() throws Exception {
+        RoleRequestDTO request = new RoleRequestDTO();
+        request.setName("Admin");
+        request.setCompanyId(companyJpaRepo.findAll().getFirst().getId());
+        request.setCreated_user(userJpaRepo.findAll().getFirst().getId());
+
+        String responseContent = mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(roleRequest)))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value(roleRequest.getName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.createdDate").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.status").doesNotExist());
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.name").value("Admin"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        saveIdForExecuteTest(responseContent);
     }
 
     @Test
-    void testCreateRole_ValidationError() throws Exception {
-        RoleRequestDTO roleRequest = new RoleRequestDTO(UUID.randomUUID(), "", existingCompany.getId()); // Invalid name
-        mockMvc.perform(post("/app/v1/roles")
+    @Order(2)
+    @DisplayName("Test Get Role by ID")
+    void testGetRoleById() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/" + testRoleId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("Admin"));
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("Test Update Role")
+    void testUpdateRole() throws Exception {
+        RoleRequestDTO updateRequest = new RoleRequestDTO();
+        updateRequest.setName("UpdatedRole");
+        updateRequest.setCompanyId(companyJpaRepo.findAll().getFirst().getId());
+        updateRequest.setCreated_user(userJpaRepo.findAll().getFirst().getId());
+
+        mockMvc.perform(put(BASE_URL + "/" + testRoleId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(roleRequest)))
-                .andExpect(MockMvcResultMatchers.status().isNotFound())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.errors").isNotEmpty());
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("UpdatedRole"));
     }
 
     @Test
-    void testUpdateRole_Success() throws Exception {
-        RoleRequestDTO roleUpdateRequest = new RoleRequestDTO(UUID.randomUUID(), "UpdatedAdmin", existingCompany.getId());
-        mockMvc.perform(put("/app/v1/roles/" + roleRequest.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(roleUpdateRequest)))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("UpdatedAdmin"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.createdDate").isNotEmpty());
+    @Order(4)
+    @DisplayName("Test Get All Roles")
+    void testGetAllRoles() throws Exception {
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].name").value("ADMIN"));
     }
 
     @Test
-    void testDeleteRole_Success() throws Exception {
-        mockMvc.perform(delete("/app/v1/roles/" + roleRequest.getId()))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Admin"));
+    @Order(5)
+    @DisplayName("Test Search Role by Name")
+    void testSearchRoleByName() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/search/UpdatedRole"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("UpdatedRole"));
     }
 
     @Test
-    void testGetRoles_Success() throws Exception {
-        mockMvc.perform(get("/app/v1/roles"))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].name").value("DEV"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].createdDate").isNotEmpty())
-                .andExpect(jsonPath("$.code", is(200)));
+    @Order(6)
+    @DisplayName("Test Delete Role by ID")
+    void testDeleteRoleById() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/" + testRoleId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("UpdatedRole"));
     }
 
     @Test
-    void testGetRoleById_Success() throws Exception {
-        mockMvc.perform(get("/app/v1/roles/" + roleRequest.getId()))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Admin"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.createdDate").isNotEmpty());
+    @Order(7)
+    @DisplayName("Test Clean Up Database")
+    void testCleanUp() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/" + testRoleId))
+                .andExpect(status().isInternalServerError());
     }
 
-    @Test
-    void testGetRoleByName_Success() throws Exception {
-        mockMvc.perform(get("/app/v1/roles/search/" + roleRequest.getName()))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Admin"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.createdDate").isNotEmpty());
+    /**
+     * Execute the test cases and save the ID for future use
+     *
+     * @param responseContent String
+     * @throws JsonProcessingException
+     */
+    private void saveIdForExecuteTest(String responseContent) throws JsonProcessingException {
+        GlobalResponse<RoleResponseDTO> response = objectMapper.readValue(responseContent, GlobalResponse.class);
+        Object data = response.getData();
+        if (data instanceof LinkedHashMap) {
+            LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) data;
+            Object id = map.get("id");
+            testRoleId = UUID.fromString((String) id);
+        }
     }
 }

@@ -5,8 +5,8 @@ import fs19.java.backend.application.dto.task.TaskRequestDTO;
 import fs19.java.backend.application.dto.task.TaskResponseDTO;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import fs19.java.backend.presentation.shared.response.ResponseHandler;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@Tag(name = "Task", description = "Manage Tasks")
 @RequestMapping("app/v1/tasks")
-@OpenAPIDefinition(info = @Info(title = "Task API", version = "v1"))
 public class TaskController {
 
 
@@ -26,9 +26,10 @@ public class TaskController {
     private TaskServiceImpl taskService;
 
 
+    @Operation(summary = "Create a Task", description = "Creates a new task with the provided details.")
     @PostMapping
     public ResponseEntity<GlobalResponse<TaskResponseDTO>> createTask(@RequestBody @Valid TaskRequestDTO taskRequestDTO) {
-        TaskResponseDTO theTaskResponse = taskService.createTask(taskRequestDTO);
+        TaskResponseDTO theTaskResponse = taskService.create(taskRequestDTO);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.CREATED, theTaskResponse.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theTaskResponse, ResponseHandler.convertResponseStatusToError(theTaskResponse.getStatus())), responseCode);
     }
@@ -40,9 +41,10 @@ public class TaskController {
      * @param taskId
      * @return
      */
+    @Operation(summary = "Update a task", description = "Updates the details of an existing task.")
     @PutMapping("/{taskId}")
     public ResponseEntity<GlobalResponse<TaskResponseDTO>> updateTask(@PathVariable UUID taskId, @RequestBody @Valid TaskRequestDTO taskRequestDTO) {
-        TaskResponseDTO theTaskResponse = taskService.updateTask(taskId, taskRequestDTO);
+        TaskResponseDTO theTaskResponse = taskService.update(taskId, taskRequestDTO);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, theTaskResponse.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theTaskResponse, ResponseHandler.convertResponseStatusToError(theTaskResponse.getStatus())), responseCode);
     }
@@ -53,9 +55,10 @@ public class TaskController {
      * @param taskId
      * @return
      */
+    @Operation(summary = "Delete a task", description = "Deletes a task by its ID.")
     @DeleteMapping("/{taskId}")
     public ResponseEntity<GlobalResponse<TaskResponseDTO>> deleteTaskById(@PathVariable UUID taskId) {
-        TaskResponseDTO theTaskResponse = taskService.deleteTask(taskId);
+        TaskResponseDTO theTaskResponse = taskService.delete(taskId);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, theTaskResponse.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theTaskResponse, ResponseHandler.convertResponseStatusToError(theTaskResponse.getStatus())), responseCode);
     }
@@ -65,9 +68,10 @@ public class TaskController {
      *
      * @return
      */
+    @Operation(summary = "Get all tasks", description = "Retrieves the details of all tasks.")
     @GetMapping
     public ResponseEntity<GlobalResponse<List<TaskResponseDTO>>> getTasks() {
-        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.getTasks()), HttpStatus.OK);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.findAll()), HttpStatus.OK);
     }
 
 
@@ -76,9 +80,10 @@ public class TaskController {
      *
      * @return
      */
+    @Operation(summary = "Get a task by ID", description = "Retrieves the details of a task by its ID.")
     @GetMapping("/{taskId}")
     public ResponseEntity<GlobalResponse<TaskResponseDTO>> getTaskById(@PathVariable UUID taskId) {
-        TaskResponseDTO theTaskResponse = taskService.getTaskById(taskId);
+        TaskResponseDTO theTaskResponse = taskService.getById(taskId);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, theTaskResponse.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theTaskResponse, ResponseHandler.convertResponseStatusToError(theTaskResponse.getStatus())), responseCode);
     }
@@ -88,9 +93,10 @@ public class TaskController {
      * @param assignedUserId
      * @return
      */
+    @Operation(summary = "Get a tasks by assigned-user-Id", description = "Retrieves the details of a tasks by assigned user.")
     @GetMapping("findByAssigned/{assignedUserId}")
     public ResponseEntity<GlobalResponse<List<TaskResponseDTO>>> getTasksByAssignedUserId(@PathVariable UUID assignedUserId) {
-        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.getTasksByAssignedUserId(assignedUserId)), HttpStatus.OK);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.getByAssignedId(assignedUserId)), HttpStatus.OK);
     }
 
     /**
@@ -98,9 +104,10 @@ public class TaskController {
      * @param createdUserId
      * @return
      */
+    @Operation(summary = "Get a tasks by created-user-Id", description = "Retrieves the details of a tasks by created user.")
     @GetMapping("findByCreated/{createdUserId}")
     public ResponseEntity<GlobalResponse<List<TaskResponseDTO>>> getTasksByCreatedUserId(@PathVariable UUID createdUserId) {
-        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.getTasksByCreatedUserId(createdUserId)), HttpStatus.OK);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.getByCreatedUserId(createdUserId)), HttpStatus.OK);
     }
 
 

@@ -7,23 +7,38 @@ import fs19.java.backend.domain.abstraction.RolePermissionRepository;
 import fs19.java.backend.domain.entity.Permission;
 import fs19.java.backend.domain.entity.Role;
 import fs19.java.backend.domain.entity.RolePermission;
-import fs19.java.backend.infrastructure.tempMemory.RoleInMemoryDB;
+import fs19.java.backend.infrastructure.JpaRepositories.PermissionJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.RoleJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.RolePermissionJpaRepo;
+import fs19.java.backend.presentation.shared.exception.RolePermissionLevelException;
 import fs19.java.backend.presentation.shared.status.ResponseStatus;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Role-Permission Repo implementation
  */
 @Repository
+@EnableJpaRepositories
 public class RolePermissionRepoImpl implements RolePermissionRepository {
 
-    @Autowired
-    private RoleInMemoryDB tempRoleDB;
+    private final RolePermissionJpaRepo rolePermissionJpaRepo;
+    private final RoleJpaRepo roleJpaRepo;
+    private final PermissionJpaRepo permissionJpaRepo;
+
+    public RolePermissionRepoImpl(RolePermissionJpaRepo rolePermissionJpaRepo, RoleJpaRepo roleJpaRepo, PermissionJpaRepo permissionJpaRepo) {
+        this.rolePermissionJpaRepo = rolePermissionJpaRepo;
+        this.roleJpaRepo = roleJpaRepo;
+        this.permissionJpaRepo = permissionJpaRepo;
+    }
+
 
     /**
      * create role permission by using user info
@@ -32,20 +47,20 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public RolePermissionResponseDTO createRolePermission(RolePermissionRequestDTO rolePermissionRequestDTO) {
-        Role roleById = tempRoleDB.findRoleById(rolePermissionRequestDTO.getRoleId());
-        if (roleById == null) {
+    public RolePermissionResponseDTO save(RolePermissionRequestDTO rolePermissionRequestDTO) {
+        Optional<Role> roleById = roleJpaRepo.findById(rolePermissionRequestDTO.getRoleId());
+        if (roleById.isEmpty()) {
             RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
             responseDTO.setStatus(ResponseStatus.ROLE_RESULT_NOT_FOUND);
             return responseDTO;
         }
-        Permission permissionById = tempRoleDB.findPermissionById(rolePermissionRequestDTO.getPermissionId());
-        if (permissionById == null) {
+        Optional<Permission> permissionById = permissionJpaRepo.findById(rolePermissionRequestDTO.getPermissionId());
+        if (permissionById.isEmpty()) {
             RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
             responseDTO.setStatus(ResponseStatus.PERMISSION_RESULT_NOT_FOUND);
             return responseDTO;
         }
-        return RolePermissionMapper.toPermissionResponseDTO(tempRoleDB.assignPermission(roleById, permissionById), ResponseStatus.SUCCESSFULLY_FOUND);
+        return getCreatedRolePermission(roleById.get(), permissionById.get());
     }
 
     /**
@@ -54,8 +69,8 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return List<RolePermissionResponseDTO>
      */
     @Override
-    public List<RolePermissionResponseDTO> getRolePermissions() {
-        return RolePermissionMapper.toPermissionResponseDTOs(tempRoleDB.findAllRolePermissions(), ResponseStatus.SUCCESSFULLY_FOUND);
+    public List<RolePermissionResponseDTO> findAll() {
+        return RolePermissionMapper.toPermissionResponseDTOs(rolePermissionJpaRepo.findAll(), ResponseStatus.SUCCESSFULLY_FOUND);
     }
 
     /**
@@ -65,17 +80,17 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public RolePermissionResponseDTO getRolePermissionById(UUID id) {
+    public RolePermissionResponseDTO findById(UUID id) {
         if (id == null) {
             return RolePermissionMapper.toPermissionResponseDTO(new RolePermission(), ResponseStatus.ROLE_PERMISSION_ID_NOT_FOUND);
         } else {
-            RolePermission rolePermission = tempRoleDB.findRolePermissionById(id);
-            if (rolePermission == null) {
+            Optional<RolePermission> rolePermission = rolePermissionJpaRepo.findById(id);
+            if (rolePermission.isEmpty()) {
                 RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
                 responseDTO.setStatus(ResponseStatus.ROLE_PERMISSION_RESULT_NOT_FOUND);
                 return responseDTO;
             }
-            return RolePermissionMapper.toPermissionResponseDTO(rolePermission, ResponseStatus.SUCCESSFULLY_FOUND);
+            return RolePermissionMapper.toPermissionResponseDTO(rolePermission.get(), ResponseStatus.SUCCESSFULLY_FOUND);
 
         }
     }
@@ -88,12 +103,31 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public RolePermissionResponseDTO updateRolePermission(UUID rolePermissionId, @Valid RolePermissionRequestDTO rolePermissionRequestDTO) {
-        RolePermission resultIfExist = getResultIfExist(rolePermissionRequestDTO.getRoleId(), rolePermissionRequestDTO.getPermissionId());
+    public RolePermissionResponseDTO update(UUID rolePermissionId, @Valid RolePermissionRequestDTO rolePermissionRequestDTO) {
+        RolePermission resultIfExist = existsById(rolePermissionRequestDTO.getRoleId(), rolePermissionRequestDTO.getPermissionId());
         if (resultIfExist == null) {
-            RolePermissionResponseDTO responseDTO = validateWithExistingRecords(rolePermissionRequestDTO);
-            if (responseDTO != null) return responseDTO;
-            return RolePermissionMapper.toPermissionResponseDTO(tempRoleDB.updateRolePermission(rolePermissionId, rolePermissionRequestDTO), ResponseStatus.SUCCESSFULLY_UPDATED);
+            Optional<RolePermission> rolePermissionOptional = rolePermissionJpaRepo.findById(rolePermissionId);
+            if (rolePermissionOptional.isPresent()) {
+                Optional<Role> roleById = roleJpaRepo.findById(rolePermissionRequestDTO.getRoleId());
+                if (roleById.isEmpty()) {
+                    RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
+                    responseDTO.setStatus(ResponseStatus.ROLE_RESULT_NOT_FOUND);
+                    return responseDTO;
+                }
+                Optional<Permission> permissionById = permissionJpaRepo.findById(rolePermissionRequestDTO.getPermissionId());
+                if (permissionById.isEmpty()) {
+                    RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
+                    responseDTO.setStatus(ResponseStatus.PERMISSION_RESULT_NOT_FOUND);
+                    return responseDTO;
+                }
+                RolePermission rolePermission = rolePermissionOptional.get();
+                rolePermission.setRole(roleById.get());
+                rolePermission.setPermission(permissionById.get());
+                rolePermissionJpaRepo.save(rolePermission);
+                return RolePermissionMapper.toPermissionResponseDTO(rolePermission, ResponseStatus.SUCCESSFULLY_UPDATED);
+            } else {
+                return RolePermissionMapper.toPermissionResponseDTO(new RolePermission(), ResponseStatus.ROLE_PERMISSION_RESULT_NOT_FOUND);
+            }
         } else {
             return RolePermissionMapper.toPermissionResponseDTO(resultIfExist, ResponseStatus.ROLE_PERMISSION_ID_RECORD_ALREADY_EXIST);
         }
@@ -101,19 +135,20 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
 
     /**
      * Validate existing records are available in the DB
+     *
      * @param rolePermissionRequestDTO
      * @return
      */
     @Override
-    public RolePermissionResponseDTO validateWithExistingRecords(RolePermissionRequestDTO rolePermissionRequestDTO) {
-        Role roleById = tempRoleDB.findRoleById(rolePermissionRequestDTO.getRoleId());
-        if (roleById == null) {
+    public RolePermissionResponseDTO validate(RolePermissionRequestDTO rolePermissionRequestDTO) {
+        Optional<Role> roleById = roleJpaRepo.findById(rolePermissionRequestDTO.getRoleId());
+        if (roleById.isEmpty()) {
             RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
             responseDTO.setStatus(ResponseStatus.ROLE_RESULT_NOT_FOUND);
             return responseDTO;
         }
-        Permission permissionById = tempRoleDB.findPermissionById(rolePermissionRequestDTO.getPermissionId());
-        if (permissionById == null) {
+        Optional<Permission> permissionById = permissionJpaRepo.findById(rolePermissionRequestDTO.getPermissionId());
+        if (permissionById.isEmpty()) {
             RolePermissionResponseDTO responseDTO = new RolePermissionResponseDTO();
             responseDTO.setStatus(ResponseStatus.PERMISSION_RESULT_NOT_FOUND);
             return responseDTO;
@@ -128,12 +163,13 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public RolePermissionResponseDTO deleteRolePermission(UUID rolePermissionId) {
-        RolePermission rolePermissionById = tempRoleDB.findRolePermissionById(rolePermissionId);
-        if (rolePermissionById == null) {
+    public RolePermissionResponseDTO delete(UUID rolePermissionId) {
+        Optional<RolePermission> rolePermissionById = rolePermissionJpaRepo.findById(rolePermissionId);
+        if (rolePermissionById.isEmpty()) {
             return RolePermissionMapper.toPermissionResponseDTO(new RolePermission(), ResponseStatus.ROLE_PERMISSION_RESULT_NOT_FOUND);
         } else {
-            return RolePermissionMapper.toPermissionResponseDTO(tempRoleDB.deleteRolePermission(rolePermissionId), ResponseStatus.SUCCESSFULLY_DELETED);
+            rolePermissionJpaRepo.delete(rolePermissionById.get());
+            return RolePermissionMapper.toPermissionResponseDTO(rolePermissionById.get(), ResponseStatus.SUCCESSFULLY_DELETED);
         }
     }
 
@@ -144,8 +180,8 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public List<RolePermissionResponseDTO> getRolesByPermissionId(UUID permissionId) {
-        return RolePermissionMapper.toPermissionResponseDTOs(tempRoleDB.finaAllRolesByPermissionId(permissionId), ResponseStatus.SUCCESSFULLY_FOUND);
+    public List<RolePermissionResponseDTO> findByPermissionId(UUID permissionId) {
+        return RolePermissionMapper.toPermissionResponseDTOs(rolePermissionJpaRepo.findByPermissionId(permissionId), ResponseStatus.SUCCESSFULLY_FOUND);
     }
 
     /**
@@ -155,8 +191,8 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public List<RolePermissionResponseDTO> getPermissionByRoleId(UUID roleId) {
-        return RolePermissionMapper.toPermissionResponseDTOs(tempRoleDB.findAllPermissionByRoleId(roleId), ResponseStatus.SUCCESSFULLY_FOUND);
+    public List<RolePermissionResponseDTO> findByRoleId(UUID roleId) {
+        return RolePermissionMapper.toPermissionResponseDTOs(rolePermissionJpaRepo.findByRoleId(roleId), ResponseStatus.SUCCESSFULLY_FOUND);
     }
 
     /**
@@ -167,7 +203,40 @@ public class RolePermissionRepoImpl implements RolePermissionRepository {
      * @return
      */
     @Override
-    public RolePermission getResultIfExist(UUID roleId, UUID permissionId) {
-        return tempRoleDB.isAlreadyAssignedPermission(roleId, permissionId);
+    public RolePermission existsById(UUID roleId, UUID permissionId) {
+        RolePermission rolePermission = new RolePermission();
+        rolePermission.setRole(roleJpaRepo.findById(roleId).orElse(null));
+        rolePermission.setPermission(permissionJpaRepo.findById(permissionId).orElse(null));
+
+        if (rolePermission.getRole() == null || rolePermission.getPermission() == null) {
+            return null; // Return null if either role or permission is not found
+        }
+        Example<RolePermission> example = Example.of(rolePermission,
+                ExampleMatcher.matchingAll()
+                        .withIgnoreNullValues()
+                        .withMatcher("permission", ExampleMatcher.GenericPropertyMatchers.exact())
+                        .withMatcher("role", ExampleMatcher.GenericPropertyMatchers.exact()));
+
+        return rolePermissionJpaRepo.findOne(example).orElse(null);
     }
+
+
+    /**
+     * Create and return newly created role-permission object
+     *
+     * @param roleById
+     * @param permissionById
+     * @return
+     */
+    private RolePermissionResponseDTO getCreatedRolePermission(Role roleById, Permission permissionById) {
+        try {
+            RolePermission rolePermission = RolePermissionMapper.toRolePermission(roleById, permissionById);
+            rolePermissionJpaRepo.save(rolePermission);
+            return RolePermissionMapper.toPermissionResponseDTO(rolePermission, ResponseStatus.SUCCESSFULLY_CREATED);
+
+        } catch (Exception e) {
+            throw new RolePermissionLevelException(e.getLocalizedMessage() + " : " + RolePermissionLevelException.ROLE_PERMISSION_CREATE);
+        }
+    }
+
 }

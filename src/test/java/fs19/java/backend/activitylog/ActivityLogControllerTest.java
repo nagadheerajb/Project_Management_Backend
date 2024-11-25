@@ -1,33 +1,35 @@
 package fs19.java.backend.activitylog;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fs19.java.backend.application.dto.activitylog.ActivityLogDTO;
-import fs19.java.backend.domain.abstraction.ActivityLogRepository;
-import fs19.java.backend.domain.abstraction.UserRepository;
-import fs19.java.backend.domain.entity.ActivityLog;
-import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.domain.entity.enums.ActionType;
 import fs19.java.backend.domain.entity.enums.EntityType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import fs19.java.backend.infrastructure.JpaRepositories.ActivityLogJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
+import fs19.java.backend.presentation.shared.response.GlobalResponse;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.UUID;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ActivityLogControllerTest {
+@Transactional
+@Commit
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class ActivityLogControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,72 +38,98 @@ public class ActivityLogControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private ActivityLogRepository activityLogRepository;
+    private ActivityLogJpaRepo activityLogJpaRepo;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserJpaRepo userJpaRepo;
 
-    private ActivityLog existingActivityLog;
-    private User existingUser;
+    private static UUID testActivityLogId;
+    private static UUID testUserId;
+
+    private static final String BASE_URL = "/api/v1/activity-logs";
 
     @BeforeEach
-    public void setUp() {
-        existingUser = new User(UUID.randomUUID(), "John", "Doe", "john.doe@example.com", "password", "123456789", null, "profile.jpg");
-        userRepository.saveUser(existingUser);
-
-        existingActivityLog = new ActivityLog(UUID.randomUUID(), EntityType.PROJECT, UUID.randomUUID(), ActionType.CREATED, ZonedDateTime.now(), existingUser.getId());
-        activityLogRepository.save(existingActivityLog);
+    void setUp() {
+        // Retrieve or create users
+        testUserId = userJpaRepo.findAll().get(0).getId(); // Assuming at least one user exists
     }
 
     @Test
-    public void testCreateActivityLog() throws Exception {
-        ActivityLogDTO request = new ActivityLogDTO(null, EntityType.TASK, UUID.randomUUID(), ActionType.CREATED, null, existingUser.getId());
+    @Order(1)
+    @DisplayName("Test Create Activity Log")
+    void testCreateActivityLog() throws Exception {
+        ActivityLogDTO request = new ActivityLogDTO();
+        request.setEntityType(EntityType.PROJECT);
+        request.setEntityId(UUID.randomUUID());
+        request.setAction(ActionType.CREATED);
+        request.setUserId(testUserId);
 
-        mockMvc.perform(post("/api/v1/activity-logs")
+        String responseContent = mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code", is(201)))
-                .andExpect(jsonPath("$.data.entityType", is("TASK")));
+                .andExpect(jsonPath("$.data.entityType").value("PROJECT"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        saveIdForExecuteTest(responseContent);
     }
 
     @Test
-    public void testUpdateActivityLog() throws Exception {
-        ActivityLogDTO request = new ActivityLogDTO(existingActivityLog.getId(), EntityType.COMMENT, existingActivityLog.getEntityId(), ActionType.UPDATED, null, existingUser.getId());
+    @Order(2)
+    @DisplayName("Test Get Activity Log by ID")
+    void testGetActivityLogById() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/" + testActivityLogId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.entityType").value("PROJECT"));
+    }
 
-        mockMvc.perform(put("/api/v1/activity-logs/" + existingActivityLog.getId())
+    @Test
+    @Order(3)
+    @DisplayName("Test Update Activity Log")
+    void testUpdateActivityLog() throws Exception {
+        ActivityLogDTO updateRequest = new ActivityLogDTO();
+        updateRequest.setId(testActivityLogId); // Ensure the ID is set
+        updateRequest.setEntityType(EntityType.TASK);
+        updateRequest.setEntityId(UUID.randomUUID());
+        updateRequest.setAction(ActionType.UPDATED);
+        updateRequest.setUserId(testUserId);
+
+        mockMvc.perform(put(BASE_URL + "/" + testActivityLogId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.entityType", is("COMMENT")));
+                .andExpect(jsonPath("$.data.entityType").value("TASK"));
     }
 
     @Test
-    public void testGetActivityLogById() throws Exception {
-        mockMvc.perform(get("/api/v1/activity-logs/" + existingActivityLog.getId()))
+    @Order(4)
+    @DisplayName("Test Get All Activity Logs")
+    void testGetAllActivityLogs() throws Exception {
+        mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.entityType", is(existingActivityLog.getEntityType().name())));
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].entityType").value("TASK"));
     }
 
     @Test
-    public void testGetAllActivityLogs() throws Exception {
-        mockMvc.perform(get("/api/v1/activity-logs"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data").isArray());
-    }
-
-    @Test
-    public void testDeleteActivityLog() throws Exception {
-        mockMvc.perform(delete("/api/v1/activity-logs/" + existingActivityLog.getId()))
+    @Order(5)
+    @DisplayName("Test Delete Activity Log by ID")
+    void testDeleteActivityLogById() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/" + testActivityLogId))
                 .andExpect(status().isNoContent());
     }
 
-    private ResultActions performPostActivityLog(ActivityLogDTO request) throws Exception {
-        return mockMvc.perform(post("/api/v1/activity-logs")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+    private void saveIdForExecuteTest(String responseContent) throws JsonProcessingException {
+        GlobalResponse<ActivityLogDTO> response = objectMapper.readValue(responseContent, GlobalResponse.class);
+        Object data = response.getData();
+        if (data instanceof LinkedHashMap) {
+            LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) data;
+            Object id = map.get("id");
+            if (id != null) {
+                testActivityLogId = UUID.fromString((String) id);
+            }
+        }
     }
 }

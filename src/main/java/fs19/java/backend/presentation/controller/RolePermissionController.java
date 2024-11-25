@@ -1,12 +1,12 @@
 package fs19.java.backend.presentation.controller;
 
+import fs19.java.backend.application.RolePermissionServiceImpl;
 import fs19.java.backend.application.dto.role.RolePermissionRequestDTO;
 import fs19.java.backend.application.dto.role.RolePermissionResponseDTO;
-import fs19.java.backend.application.RolePermissionServiceImpl;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import fs19.java.backend.presentation.shared.response.ResponseHandler;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Role-Permission", description = "Manage Role-Permission")
 @RestController
 @RequestMapping("app/v1/rolePermissions")
-@OpenAPIDefinition(info = @Info(title = "RolePermission API", version = "v1"))
 public class RolePermissionController {
 
     @Autowired
@@ -30,9 +30,10 @@ public class RolePermissionController {
      * @param rolePermissionRequestDTO
      * @return
      */
+    @Operation(summary = "Create a role-permission", description = "Creates a new role-permission with the provided details.")
     @PostMapping
     public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> assignPermissionToRole(@RequestBody @Valid RolePermissionRequestDTO rolePermissionRequestDTO) {
-        RolePermissionResponseDTO theResponse = rolePermissionService.assignPermissionToRole(rolePermissionRequestDTO);
+        RolePermissionResponseDTO theResponse = rolePermissionService.create(rolePermissionRequestDTO);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.CREATED, theResponse.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theResponse, ResponseHandler.convertResponseStatusToError(theResponse.getStatus())), responseCode);
     }
@@ -44,9 +45,10 @@ public class RolePermissionController {
      * @param rolePermissionRequestDTO RolePermissionRequestDTO
      * @return
      */
+    @Operation(summary = "Update a role-permission", description = "Updates the details of an existing role-permission.")
     @PutMapping("/{rolePermissionId}")
     public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> updateRolePermissionId(@PathVariable UUID rolePermissionId, @RequestBody @Valid RolePermissionRequestDTO rolePermissionRequestDTO) {
-        RolePermissionResponseDTO theRoleResponseDTO = rolePermissionService.updateRolePermission(rolePermissionId, rolePermissionRequestDTO);
+        RolePermissionResponseDTO theRoleResponseDTO = rolePermissionService.update(rolePermissionId, rolePermissionRequestDTO);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, theRoleResponseDTO.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theRoleResponseDTO, ResponseHandler.convertResponseStatusToError(theRoleResponseDTO.getStatus())), responseCode);
     }
@@ -57,14 +59,13 @@ public class RolePermissionController {
      * @param rolePermissionId
      * @return
      */
+    @Operation(summary = "Delete a role-permission", description = "Deletes a role-permission by its ID.")
     @DeleteMapping("/{rolePermissionId}")
     public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> deleteRolePermissionById(@PathVariable UUID rolePermissionId) {
-        RolePermissionResponseDTO roleResponseDTO = rolePermissionService.deleteRolePermission(rolePermissionId);
+        RolePermissionResponseDTO roleResponseDTO = rolePermissionService.delete(rolePermissionId);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, roleResponseDTO.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), roleResponseDTO, ResponseHandler.convertResponseStatusToError(roleResponseDTO.getStatus())), responseCode);
     }
-
-
 
 
     /**
@@ -72,11 +73,11 @@ public class RolePermissionController {
      *
      * @return
      */
+    @Operation(summary = "Get all role-permissions", description = "Retrieves the details of all role-permissions.")
     @GetMapping
     public ResponseEntity<GlobalResponse<List<RolePermissionResponseDTO>>> getRolePermissions() {
-        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), rolePermissionService.getRolePermissions()), HttpStatus.OK);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), rolePermissionService.findAll()), HttpStatus.OK);
     }
-
 
 
     /**
@@ -84,9 +85,10 @@ public class RolePermissionController {
      *
      * @return
      */
+    @Operation(summary = "Get role-permissions by id", description = "Retrieves the details of all role-permissions by id.")
     @GetMapping("/{rolePermissionId}")
     public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> getRolePermissionById(@PathVariable UUID rolePermissionId) {
-        RolePermissionResponseDTO roleResponseDTO = rolePermissionService.getRolePermissionById(rolePermissionId);
+        RolePermissionResponseDTO roleResponseDTO = rolePermissionService.findByPermissionId(rolePermissionId);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, roleResponseDTO.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), roleResponseDTO, ResponseHandler.convertResponseStatusToError(roleResponseDTO.getStatus())), responseCode);
     }
@@ -97,9 +99,10 @@ public class RolePermissionController {
      *
      * @return
      */
+    @Operation(summary = "Get role-permissions by roleId and PermissionId", description = "Retrieves the details of all role-permissions by role and permission.")
     @GetMapping("/{roleId}/{permissionId}")
-    public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> getExistingRecord(@PathVariable UUID roleId,@PathVariable UUID permissionId) {
-        RolePermissionResponseDTO roleResponseDTO = rolePermissionService.getExistingRecord(roleId,permissionId);
+    public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> getExistingRecord(@PathVariable UUID roleId, @PathVariable UUID permissionId) {
+        RolePermissionResponseDTO roleResponseDTO = rolePermissionService.findByRoleIdAndPermissionId(roleId, permissionId);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, roleResponseDTO.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), roleResponseDTO, ResponseHandler.convertResponseStatusToError(roleResponseDTO.getStatus())), responseCode);
     }
@@ -110,9 +113,10 @@ public class RolePermissionController {
      *
      * @return
      */
+    @Operation(summary = "Get role-permissions by PermissionId", description = "Retrieves the details of all role-permissions by permission.")
     @GetMapping("findAllRoles/{permissionId}")
     public ResponseEntity<GlobalResponse<List<RolePermissionResponseDTO>>> getRolePermissionByPermissionId(@PathVariable UUID permissionId) {
-        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), rolePermissionService.getRolesByPermissionByPermissionId(permissionId)), HttpStatus.OK);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), rolePermissionService.findById(permissionId)), HttpStatus.OK);
     }
 
     /**
@@ -120,11 +124,11 @@ public class RolePermissionController {
      *
      * @return
      */
+    @Operation(summary = "Get role-permissions by roleId", description = "Retrieves the details of all role-permissions by.")
     @GetMapping("findAllPermissions/{roleId}")
     public ResponseEntity<GlobalResponse<List<RolePermissionResponseDTO>>> getRolePermissionByRoleId(@PathVariable UUID roleId) {
-        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), rolePermissionService.getPermissionByRoleId(roleId)), HttpStatus.OK);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), rolePermissionService.findByRoleId(roleId)), HttpStatus.OK);
     }
-
 
 
 }

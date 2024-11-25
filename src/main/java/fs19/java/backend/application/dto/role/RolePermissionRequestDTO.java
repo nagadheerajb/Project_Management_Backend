@@ -26,4 +26,7 @@ public class RolePermissionRequestDTO {
     @Schema(type = "uuid", format = "uuid", description = "Unique identifier for role-Id")
     @NotNull
     private UUID roleId;
+    @Schema(type = "uuid", format = "uuid", description = "Role creating user Id")
+    @NotNull(message = "User id cannot be null")
+    private UUID created_user;
 }

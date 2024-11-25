@@ -4,11 +4,14 @@ import fs19.java.backend.application.dto.role.RoleRequestDTO;
 import fs19.java.backend.domain.abstraction.RoleRepository;
 import fs19.java.backend.domain.entity.Company;
 import fs19.java.backend.domain.entity.Role;
-import fs19.java.backend.infrastructure.tempMemory.RoleInMemoryDB;
-import org.springframework.beans.factory.annotation.Autowired;
+import fs19.java.backend.infrastructure.JpaRepositories.CompanyJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.RoleJpaRepo;
+import fs19.java.backend.presentation.shared.exception.RoleLevelException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -17,19 +20,28 @@ import java.util.UUID;
 @Repository
 public class RoleRepoImpl implements RoleRepository {
 
-    @Autowired
-    private RoleInMemoryDB tempRoleDB;
+
+    private final RoleJpaRepo roleJpaRepo;
+    private final CompanyJpaRepo companyJpaRepo;
+
+    public RoleRepoImpl(RoleJpaRepo roleJpaRepo, CompanyJpaRepo companyJpaRepo) {
+        this.roleJpaRepo = roleJpaRepo;
+        this.companyJpaRepo = companyJpaRepo;
+    }
 
     /**
      * Create a new role according to user specified details
      *
-     * @param role    RoleRequestDTO
-     * @param company
+     * @param role RoleRequestDTO
      * @return Role
      */
     @Override
-    public Role createRole(RoleRequestDTO role, Company company) {
-        return tempRoleDB.createRole(role, company);
+    public Role save(Role role) {
+        try {
+            return roleJpaRepo.save(role);
+        } catch (Exception e) {
+            throw new RoleLevelException(e.getLocalizedMessage() + " : " + RoleLevelException.ROLE_CREATE);
+        }
     }
 
     /**
@@ -41,13 +53,18 @@ public class RoleRepoImpl implements RoleRepository {
      * @return
      */
     @Override
-    public Role updateRole(UUID roleId, RoleRequestDTO role, Company company) {
-        return tempRoleDB.updateRole(roleId, role,company);
+    public Role update(UUID roleId, RoleRequestDTO role, Company company) {
+        Role myRole = findById(roleId);
+        myRole.setName(role.getName());
+        myRole.setCompany(company);
+        return roleJpaRepo.save(myRole);
     }
 
     @Override
-    public Role deleteRole(UUID roleId) {
-        return tempRoleDB.deleteRole(roleId);
+    public Role delete(UUID roleId) {
+        Role role = findById(roleId);
+        roleJpaRepo.delete(role);
+        return role;
     }
 
     /**
@@ -56,13 +73,13 @@ public class RoleRepoImpl implements RoleRepository {
      * @return
      */
     @Override
-    public List<Role> getRoles() {
-        return tempRoleDB.findAllRoles();
+    public List<Role> findAll() {
+        return roleJpaRepo.findAll();
     }
 
     @Override
-    public Role getRoleByName(String roleName) {
-        return tempRoleDB.findRoleByName(roleName);
+    public Role findByName(String roleName) {
+        return roleJpaRepo.findByName(roleName);
     }
 
     /**
@@ -72,7 +89,25 @@ public class RoleRepoImpl implements RoleRepository {
      * @return
      */
     @Override
-    public Role getRoleById(UUID roleId) {
-        return tempRoleDB.findRoleById(roleId);
+    public Role findById(UUID roleId) {
+        return roleJpaRepo.findById(roleId)
+                .orElseThrow(() -> new EntityNotFoundException("Role result not found with ID: " + roleId));
+
+    }
+
+    /**
+     * Check id is existing
+     *
+     * @param roleId
+     * @return
+     */
+    @Override
+    public boolean existsById(UUID roleId) {
+        return roleJpaRepo.existsById(roleId);
+    }
+
+    @Override
+    public Optional<Company> getCompanyByCompanyId(UUID companyId) {
+        return companyJpaRepo.findById(companyId);
     }
 }

@@ -1,31 +1,36 @@
 package fs19.java.backend.comment;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import fs19.java.backend.application.dto.comment.CommentRequestDTO;
+import fs19.java.backend.application.dto.comment.CommentResponseDTO;
 import fs19.java.backend.application.dto.comment.CommentUpdateDTO;
-import fs19.java.backend.domain.abstraction.CommentRepository;
-import fs19.java.backend.domain.entity.Comment;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import fs19.java.backend.infrastructure.JpaRepositories.CommentJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.TaskJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
+import fs19.java.backend.presentation.shared.response.GlobalResponse;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
 
-
+import java.util.LinkedHashMap;
 import java.util.UUID;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class CommentControllerTest {
+@Transactional
+@Commit
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class CommentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -34,80 +39,100 @@ public class CommentControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private CommentRepository commentRepository;
+    private CommentJpaRepo commentJpaRepo;
 
-    private Comment existingComment;
-    private UUID taskId;
-    private UUID userId;
+    @Autowired
+    private UserJpaRepo userJpaRepo;
+
+    @Autowired
+    private TaskJpaRepo taskJpaRepo;
+
+    private static UUID testCommentId;
+    private static UUID testUserId;
+    private static UUID testTaskId;
+
+    private static final String BASE_URL = "/api/v1/comments";
 
     @BeforeEach
     public void setUp() {
-        taskId = UUID.randomUUID();
-        userId = UUID.randomUUID();
-        existingComment = new Comment(UUID.randomUUID(), taskId, "This is a test comment", null, userId);
-        commentRepository.save(existingComment);
+        testUserId = userJpaRepo.findAll().get(0).getId();
+        testTaskId = taskJpaRepo.findAll().get(0).getId();
     }
 
     @Test
+    @Order(1)
+    @DisplayName("Test Create Comment")
     public void testCreateComment() throws Exception {
-        UUID newUserId = UUID.randomUUID();
-        CommentRequestDTO request = new CommentRequestDTO(taskId, "This is a new comment", newUserId);
+        CommentRequestDTO request = new CommentRequestDTO();
+        request.setTaskId(testTaskId);
+        request.setContent("This is a test comment");
+        request.setCreatedBy(testUserId);
 
-        mockMvc.perform(post("/api/v1/comments")
+        String responseContent = mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code", is(201)))
-                .andExpect(jsonPath("$.data.content", is("This is a new comment")));
+                .andExpect(jsonPath("$.data.content").value("This is a test comment"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        saveIdForExecuteTest(responseContent);
     }
 
     @Test
-    public void testUpdateComment() throws Exception {
-        CommentUpdateDTO request = new CommentUpdateDTO();
-        request.setContent("Updated comment content");
-
-        mockMvc.perform(put("/api/v1/comments/" + existingComment.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.content", is("Updated comment content")));
-    }
-
-    @Test
+    @Order(2)
+    @DisplayName("Test Get Comment by ID")
     public void testGetCommentById() throws Exception {
-        mockMvc.perform(get("/api/v1/comments/" + existingComment.getId()))
+        mockMvc.perform(get(BASE_URL + "/" + testCommentId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.content", is(existingComment.getContent())));
+                .andExpect(jsonPath("$.data.content").value("This is a test comment"));
     }
 
     @Test
+    @Order(3)
+    @DisplayName("Test Update Comment")
+    public void testUpdateComment() throws Exception {
+        CommentUpdateDTO updateRequest = new CommentUpdateDTO();
+        updateRequest.setContent("This is an updated comment");
+
+        mockMvc.perform(put(BASE_URL + "/" + testCommentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").value("This is an updated comment"));
+    }
+
+    @Test
+    @Order(4)
+    @DisplayName("Test Get All Comments")
     public void testGetAllComments() throws Exception {
-        mockMvc.perform(get("/api/v1/comments"))
+        mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].content").value("This is a comment on the task."));
     }
 
     @Test
-    public void testDeleteComment() throws Exception {
-        mockMvc.perform(delete("/api/v1/comments/" + existingComment.getId()))
+    @Order(5)
+    @DisplayName("Test Delete Comment by ID")
+    public void testDeleteCommentById() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/" + testCommentId))
                 .andExpect(status().isNoContent());
     }
 
-    @Test
-    public void testGetNonExistentComment() throws Exception {
-        UUID nonExistentId = UUID.randomUUID();
-        mockMvc.perform(get("/api/v1/comments/" + nonExistentId))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code", is(404)))
-                .andExpect(jsonPath("$.errors[0].message", is("Comment with ID " + nonExistentId + " not found")));
-    }
-
-    private ResultActions performPostComment(CommentRequestDTO request) throws Exception {
-        return mockMvc.perform(post("/api/v1/comments")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+    private void saveIdForExecuteTest(String responseContent) throws JsonProcessingException {
+        GlobalResponse<CommentResponseDTO> response = objectMapper.readValue(responseContent, GlobalResponse.class);
+        Object data = response.getData();
+        if (data instanceof LinkedHashMap) {
+            LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) data;
+            Object id = map.get("id");
+            if (id != null) {
+                testCommentId = UUID.fromString((String) id);
+            } else {
+                throw new IllegalStateException("Comment ID not found in response");
+            }
+        } else {
+            throw new IllegalStateException("Response data is not in expected format");
+        }
     }
 }

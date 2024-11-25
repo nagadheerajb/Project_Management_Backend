@@ -42,7 +42,7 @@ public class TaskResponseDTO {
     @Schema(type = "Attachment", format = "Object", description = "Task attachments can add here")
     private List<String> attachment;
     @Schema(type = "Enum", format = "Enum", description = "TaskStatus define here")
-    private TaskStatus taskStatus;
+    private String taskStatus;
     @Schema(type = "uuid", format = "uuid", description = "Unique project id define here")
     private UUID projectId;
     @Schema(type = "uuid", format = "uuid", description = "Unique created user id define here")
@@ -51,7 +51,7 @@ public class TaskResponseDTO {
     @Schema(type = "uuid", format = "uuid", description = "Unique assign user id define here")
     private UUID assignedUserId;
     @Schema(type = "Enum", format = "Enum", description = "Task priority define here")
-    private Priority priority;
+    private String priority;
     @Schema(type = "String", format = "ResponseStatus", description = "Unique system status")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private ResponseStatus status;

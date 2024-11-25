@@ -1,5 +1,6 @@
 package fs19.java.backend.application.mapper;
 
+import fs19.java.backend.application.dto.auth.AuthResponseDTO;
 import fs19.java.backend.application.dto.user.UserCreateDTO;
 import fs19.java.backend.application.dto.user.UserReadDTO;
 import fs19.java.backend.domain.entity.User;
@@ -29,6 +30,19 @@ public class UserMapper {
     userReadDto.setPhone(user.getPhone());
     userReadDto.setCreatedDate(user.getCreatedDate());
     userReadDto.setProfileImage(user.getProfileImage());
+    return userReadDto;
+  }
+
+  public static AuthResponseDTO toAuthResponseDTO(User user, String token) {
+    AuthResponseDTO userReadDto = new AuthResponseDTO();
+    userReadDto.setId(user.getId());
+    userReadDto.setFirstName(user.getFirstName());
+    userReadDto.setLastName(user.getLastName());
+    userReadDto.setEmail(user.getEmail());
+    userReadDto.setPhone(user.getPhone());
+    userReadDto.setCreatedDate(user.getCreatedDate());
+    userReadDto.setProfileImage(user.getProfileImage());
+    userReadDto.setAccessToken(token);
     return userReadDto;
   }
 }

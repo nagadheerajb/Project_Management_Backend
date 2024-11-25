@@ -8,19 +8,19 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TaskService {
-    TaskResponseDTO createTask(@Valid TaskRequestDTO taskRequestDTO);
+    TaskResponseDTO create(@Valid TaskRequestDTO taskRequestDTO);
 
-    TaskResponseDTO updateTask(UUID taskId, @Valid TaskRequestDTO taskRequestDTO);
+    TaskResponseDTO update(UUID taskId, @Valid TaskRequestDTO taskRequestDTO);
 
-    TaskResponseDTO deleteTask(UUID taskId);
+    TaskResponseDTO delete(UUID taskId);
 
-    List<TaskResponseDTO> getTasks();
+    List<TaskResponseDTO> findAll();
 
-    TaskResponseDTO getTaskById(UUID taskId);
+    TaskResponseDTO getById(UUID taskId);
 
-    List<TaskResponseDTO> getTasksByAssignedUserId(UUID userId);
+    List<TaskResponseDTO> getByAssignedId(UUID userId);
 
-    List<TaskResponseDTO> getTasksByCreatedUserId(UUID createdUserId);
+    List<TaskResponseDTO> getByCreatedUserId(UUID createdUserId);
 }
 
 

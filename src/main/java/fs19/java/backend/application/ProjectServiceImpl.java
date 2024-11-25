@@ -6,9 +6,18 @@ import fs19.java.backend.application.dto.project.ProjectUpdateDTO;
 import fs19.java.backend.application.mapper.ProjectMapper;
 import fs19.java.backend.application.service.ProjectService;
 import fs19.java.backend.domain.entity.Project;
-import fs19.java.backend.infrastructure.ProjectRepoImpl;
+import fs19.java.backend.domain.entity.User;
+import fs19.java.backend.domain.entity.Workspace;
+import fs19.java.backend.domain.entity.enums.ActionType;
+import fs19.java.backend.domain.entity.enums.EntityType;
+import fs19.java.backend.infrastructure.JpaRepositories.ProjectJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.WorkspaceJpaRepo;
 import fs19.java.backend.presentation.shared.exception.ProjectNotFoundException;
 import fs19.java.backend.presentation.shared.exception.ProjectValidationException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -18,46 +27,83 @@ import java.util.UUID;
 
 @Service
 public class ProjectServiceImpl implements ProjectService {
-    private final ProjectRepoImpl projectRepository;
+
+    private static final Logger logger = LogManager.getLogger(ProjectServiceImpl.class);
     private static final String ERROR_MESSAGE = "Project not found with Id ";
 
-    public ProjectServiceImpl(ProjectRepoImpl projectRepository) {
+    @Autowired
+    private final ProjectJpaRepo projectRepository;
+
+    @Autowired
+    private final WorkspaceJpaRepo workspaceRepository;
+
+    @Autowired
+    private final UserJpaRepo userRepository;
+    private final ActivityLoggerService activityLoggerService;
+
+    public ProjectServiceImpl(
+        ProjectJpaRepo projectRepository,
+        UserJpaRepo userRepository,
+        WorkspaceJpaRepo workspaceRepository,
+        ActivityLoggerService activityLoggerService) {
+
         this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
+        this.workspaceRepository = workspaceRepository;
+        this.activityLoggerService = activityLoggerService;
     }
     @Override
     public ProjectReadDTO createProject(ProjectCreateDTO projectDTO) {
-        if (projectDTO.getName() == null || projectDTO.getName().isEmpty()) {
-            throw new ProjectValidationException("Project name is required");
-        }
-        if (projectDTO.getStartDate() == null || projectDTO.getStartDate().isAfter(projectDTO.getEndDate())) {
-            throw new ProjectValidationException("Start date is required and must be before end date");
-        }
-        if (projectDTO.getEndDate() == null || projectDTO.getEndDate().isBefore(projectDTO.getStartDate())) {
-            throw new ProjectValidationException("End date is required and must be after start date");
-        }
+        logger.info("Creating project with DTO: {}", projectDTO);
+
+        User createdBy = userRepository.findById(projectDTO.getCreatedByUserId())
+            .orElseThrow(() -> new ProjectValidationException("User not found with ID " + projectDTO.getCreatedByUserId()));
+        logger.info("User found for project creation: {}", createdBy);
+
+        Workspace workspace = workspaceRepository.findById(projectDTO.getWorkspaceId())
+            .orElseThrow(() -> new ProjectValidationException(
+                "Workspace not found with ID " + projectDTO.getWorkspaceId()));
+        logger.info("Workspace found for project creation: {}", workspace);
 
         Project project = ProjectMapper.toEntity(projectDTO);
-        project.setId(UUID.randomUUID());
-        project.setCreatedDate(ZonedDateTime.now());
-        project.setCreatedByUserId(UUID.randomUUID());
-        project.setWorkspaceId(UUID.randomUUID());
 
-        projectRepository.saveProject(project);
+        project.setCreatedDate(ZonedDateTime.now());
+        project.setCreatedByUser(createdBy);
+        project.setWorkspace(workspace);
+
+        project = projectRepository.save(project);
+        logger.info("Project created and saved: {}", project);
+
+        logger.info("EntityType: {}", EntityType.PROJECT);
+        logger.info("Entity ID: {}", project.getId());
+        logger.info("Action: {}", ActionType.CREATED);
+        logger.info("User ID: {}", createdBy.getId());
+
+        activityLoggerService.logActivity(EntityType.PROJECT, project.getId(), ActionType.CREATED, createdBy.getId());
+        logger.info("Activity logged for project creation");
+
         return ProjectMapper.toReadDTO(project);
     }
 
     @Override
     public ProjectReadDTO updateProject(UUID projectId, ProjectUpdateDTO projectDTO) {
+        logger.info("Updating project with ID: {} and DTO: {}", projectId, projectDTO);
         Optional<Project> existingProject = projectRepository.findById(projectId);
 
         if (existingProject.isPresent()) {
+            logger.info("Existing project found: {}", existingProject);
             Project updatedProject = existingProject.get();
             updatedProject.setDescription(projectDTO.getDescription());
             updatedProject.setStartDate(projectDTO.getStartDate());
             updatedProject.setEndDate(projectDTO.getEndDate());
             updatedProject.setStatus(projectDTO.getStatus());
 
-             projectRepository.saveProject(updatedProject);
+            updatedProject = projectRepository.save(updatedProject);
+            logger.info("Project updated and saved: {}", updatedProject);
+
+            activityLoggerService.logActivity(EntityType.PROJECT, updatedProject.getId(), ActionType.UPDATED, updatedProject.getCreatedByUser().getId());
+            logger.info("Activity logged for project update");
+
             return ProjectMapper.toReadDTO(updatedProject);
         }
         else {
@@ -66,27 +112,37 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Boolean deleteProject(UUID projectId) {
-        Optional<Project> project = projectRepository.findById(projectId);
-        if (project.isPresent()) {
-            projectRepository.deleteProject(project.get());
-            return true;
-        }
-        return false;
-    }
-
-    @Override
     public ProjectReadDTO findProjectById(UUID projectId) {
+        logger.info("Retrieving project with ID: {}", projectId);
+
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(ERROR_MESSAGE + projectId));
+            .orElseThrow(() -> new ProjectNotFoundException(ERROR_MESSAGE + projectId));
+        logger.info("Project retrieved: {}", project);
+
         return ProjectMapper.toReadDTO(project);
     }
 
     @Override
     public List<ProjectReadDTO> findAllProjects() {
-        List<Project> projects = projectRepository.findAllProjects();
+        List<Project> projects = projectRepository.findAll();
         return projects.stream()
-                .map(ProjectMapper::toReadDTO)
-                .toList();
+            .map(ProjectMapper::toReadDTO)
+            .toList();
+    }
+
+    @Override
+    public Boolean deleteProject(UUID projectId) {
+        logger.info("Deleting project with ID: {}", projectId);
+
+        Optional<Project> project = projectRepository.findById(projectId);
+        if (project.isPresent()) {
+            logger.info("Project found: {}", project);
+            projectRepository.delete(project.get());
+
+            logger.info("Project deleted successfully");
+
+            return true;
+        }
+        return false;
     }
 }

@@ -74,6 +74,7 @@ public class ResponseHandler {
             case COMPANY_ID_NOT_FOUND -> errors.add(new ErrorItem(" Company Id Not Found", "" + status.getStatus()));
             case COMPANY_NAME_NOT_FOUND ->
                     errors.add(new ErrorItem(" Company name Not Found", "" + status.getStatus()));
+            case USER_ID_NOT_FOUND -> errors.add(new ErrorItem("User Id Not Found", "" + status.getStatus()));
         }
         return errors;
     }
@@ -98,7 +99,7 @@ public class ResponseHandler {
                  INVALID_INFORMATION_INVITATION_DETAILS_NOT_CREATED, INVITATION_COMPANY_ID_NOT_FOUND,
                  INVITATION_ID_NOT_FOUND, INVALID_INFORMATION_INVITATION_DETAILS_NOT_DELETED,
                  INVALID_INFORMATION_INVITATION_DETAILS_NOT_FOUND, COMPANY_ID_NOT_FOUND,
-                 COMPANY_NAME_NOT_FOUND -> {
+                 COMPANY_NAME_NOT_FOUND, USER_ID_NOT_FOUND -> {
 
                 return HttpStatus.NOT_FOUND;
             }

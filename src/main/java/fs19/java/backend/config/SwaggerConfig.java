@@ -5,10 +5,11 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.responses.ApiResponse;
-import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,7 +30,17 @@ public class SwaggerConfig {
                         .addResponses("NotFound", createResponse("404", "Resource not found"))
                         .addResponses("InternalError", createResponse("500", "Internal server error"))
                         .addResponses("Created", createResponse("201", "Resource created successfully"))
-                        .addResponses("NoContent", createResponse("204", "No content")));
+                        .addResponses("NoContent", createResponse("204", "No content")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearerAuth",
+                                new SecurityScheme()
+                                        .name("Authorization")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                                        .description("JWT Authorization header using the Bearer scheme")));
     }
 
     private ApiResponse createResponse(String code, String description) {

@@ -2,17 +2,18 @@ package fs19.java.backend.application.mapper;
 
 import fs19.java.backend.application.dto.activitylog.ActivityLogDTO;
 import fs19.java.backend.domain.entity.ActivityLog;
+import fs19.java.backend.domain.entity.User;
 
 public class ActivityLogMapper {
 
-    public static ActivityLog toEntity(ActivityLogDTO activityLogDTO) {
+    public static ActivityLog toEntity(ActivityLogDTO activityLogDTO, User user) {
         return new ActivityLog(
                 activityLogDTO.getId(),
                 activityLogDTO.getEntityType(),
                 activityLogDTO.getEntityId(),
                 activityLogDTO.getAction(),
                 activityLogDTO.getCreatedDate(),
-                activityLogDTO.getUserId()
+                user
         );
     }
 
@@ -23,7 +24,7 @@ public class ActivityLogMapper {
                 activityLog.getEntityId(),
                 activityLog.getAction(),
                 activityLog.getCreatedDate(),
-                activityLog.getUserId()
+                activityLog.getUserId().getId()
         );
     }
 }

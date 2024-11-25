@@ -1,11 +1,14 @@
 package fs19.java.backend.application.mapper;
 
 import fs19.java.backend.application.dto.role.RolePermissionResponseDTO;
+import fs19.java.backend.domain.entity.Permission;
+import fs19.java.backend.domain.entity.Role;
 import fs19.java.backend.domain.entity.RolePermission;
 import fs19.java.backend.presentation.shared.status.ResponseStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class RolePermissionMapper {
 
@@ -32,6 +35,14 @@ public class RolePermissionMapper {
             responseDTOS.add(toPermissionResponseDTO(rolePermission, status));
         });
         return responseDTOS;
+    }
+
+    public static RolePermission toRolePermission(Role role, Permission permission) {
+        RolePermission rolePermission = new RolePermission();
+        rolePermission.setRole(role);
+        rolePermission.setPermission(permission);
+        return rolePermission;
+
     }
 }
 

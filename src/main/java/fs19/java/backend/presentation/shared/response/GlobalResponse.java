@@ -1,7 +1,10 @@
 package fs19.java.backend.presentation.shared.response;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+
 import java.util.List;
 
 @Getter
@@ -20,7 +23,7 @@ public class GlobalResponse<T> {
         this.data = data;
         this.errors = null;
     }
-  
+
     public GlobalResponse(int code, List<ErrorItem> errors) {
         this.status = ERROR;
         this.code = code;
@@ -33,6 +36,14 @@ public class GlobalResponse<T> {
         this.code = code;
         this.data = data;
         this.errors = errors;
+    }
+
+    @JsonCreator
+    public GlobalResponse(@JsonProperty("data") T data, @JsonProperty("status") String status) {
+        this.data = data;
+        this.status = status;
+        this.code = 0;
+        this.errors = null;
     }
 
 

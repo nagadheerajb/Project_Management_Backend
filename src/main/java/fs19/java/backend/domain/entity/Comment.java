@@ -1,10 +1,8 @@
 package fs19.java.backend.domain.entity;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.ZonedDateTime;
 import java.util.UUID;
@@ -13,10 +11,22 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Table(name = "comments")
 public class Comment {
+    @Id
+    @GeneratedValue(generator = "UUID")
     private UUID id;
-    private UUID taskId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id", referencedColumnName = "id")
+    private Task taskId;
+    @Column(nullable = false)
     private String content;
+
+    @Column
     private ZonedDateTime createdDate;
-    private UUID createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", referencedColumnName = "id")
+    private User createdBy;
 }

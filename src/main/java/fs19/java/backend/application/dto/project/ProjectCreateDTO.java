@@ -35,5 +35,11 @@ public class ProjectCreateDTO {
   @FutureOrPresent(message = "End date must be in the present or future")
   private ZonedDateTime endDate;
 
+  @Schema(type = "uuid", format = "string", description = "User ID of the project creator")
+  private UUID createdByUserId;
+
+  @Schema(type = "uuid", format = "string", description = "Workspace ID of the project")
+  private UUID workspaceId;
+
   private Boolean status = true;
 }

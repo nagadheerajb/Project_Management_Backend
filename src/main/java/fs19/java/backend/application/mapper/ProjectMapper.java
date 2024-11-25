@@ -9,16 +9,17 @@ import lombok.experimental.UtilityClass;
 public class ProjectMapper {
 
   public static ProjectReadDTO toReadDTO(Project project) {
-    ProjectReadDTO dto = new ProjectReadDTO();
-    dto.setId(project.getId());
-    dto.setName(project.getName());
-    dto.setDescription(project.getDescription());
-    dto.setCreatedDate(project.getCreatedDate());
-    dto.setStartDate(project.getStartDate());
-    dto.setEndDate(project.getEndDate());
-    dto.setWorkspaceId(project.getWorkspaceId());
-    dto.setStatus(project.getStatus());
-    return dto;
+    return ProjectReadDTO.builder()
+        .id(project.getId())
+        .name(project.getName())
+        .description(project.getDescription())
+        .createdDate(project.getCreatedDate())
+        .startDate(project.getStartDate())
+        .endDate(project.getEndDate())
+        .createdByUserId(project.getCreatedByUser().getId())
+        .workspaceId(project.getWorkspace().getId())
+        .status(project.getStatus())
+        .build();
   }
 
   public static Project toEntity(ProjectCreateDTO dto) {

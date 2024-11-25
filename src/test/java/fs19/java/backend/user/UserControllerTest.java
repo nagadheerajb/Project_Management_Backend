@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+
 @SpringBootTest
 @AutoConfigureMockMvc
 class UserControllerTest {
@@ -36,9 +37,9 @@ class UserControllerTest {
   @BeforeEach
   void setUp() {
     userCreateDto = UserCreateDTO.builder()
-        .firstName("John")
+        .firstName("Rony")
         .lastName("Doe")
-        .email("john.doe@example.com")
+        .email("mony.doe@example.com")
         .password("password123")
         .phone("1234566574")
         .profileImage("profile.jpg")
@@ -55,27 +56,30 @@ class UserControllerTest {
 
   @Test
   void shouldCreateUserOnPost() throws Exception {
-    // Act and Assert
+
+    String jsonResponse = mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users"))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    int arrayLength = JsonPath.parse(jsonResponse).read("$.data.length()");
+
+    userReadDto.setEmail("post.request@example.com");
     performPostUser(userCreateDto)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.code", is(201)))
-        .andExpect(jsonPath("$.data.firstName", is("John")));
+        .andExpect(jsonPath("$.data.firstName", is("Rony")));
 
-    mockMvc.perform(MockMvcRequestBuilders.get("/v1/api/users"))
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.code", is(200)))
-        .andExpect(jsonPath("$.data").isArray())
-        .andExpect(jsonPath("$.data.size()", is(1)))
-        .andExpect(jsonPath("$.data[0].firstName", is("John")))
-        .andExpect(jsonPath("$.data[0].lastName", is("Doe")));
+        .andExpect(jsonPath("$.data.length()", is(arrayLength + 1)));
+
   }
 
   @Test
   void shouldGetAllUsersOnGet() throws Exception {
-    performPostUser(userCreateDto).andExpect(status().isCreated());
-    performPostUser(userCreateDto).andExpect(status().isCreated());
-
-    mockMvc.perform(MockMvcRequestBuilders.get("/v1/api/users"))
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.code", is(200)))
         .andExpect(jsonPath("$.data").isArray());
@@ -83,63 +87,67 @@ class UserControllerTest {
 
   @Test
   void shouldGetUserByIdOnGet() throws Exception {
+    userCreateDto.setFirstName("Dolly");
+    userCreateDto.setEmail("get.id@example.com"); // need unique email
     String response = performPostUser(userCreateDto)
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.data.firstName", is("John")))
+        .andExpect(jsonPath("$.data.firstName", is("Dolly")))
         .andDo(print())
         .andReturn()
         .getResponse()
         .getContentAsString();
 
-    // Extract the ID from the response
     String userId = JsonPath.parse(response).read("$.data.id");
 
-    mockMvc.perform(MockMvcRequestBuilders.get("/v1/api/users/{id}", userId))
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}", userId))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.firstName", is("John")));
-  }
-
-  @Test
-  void shouldDeleteUserOnDelete() throws Exception {
-    String response = performPostUser(userCreateDto)
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.data.firstName", is("John")))
-        .andDo(print())
-        .andReturn()
-        .getResponse()
-        .getContentAsString();
-
-    // Extract the ID from the response
-    String userId = JsonPath.parse(response).read("$.data.id");
-    mockMvc.perform(MockMvcRequestBuilders.delete("/v1/api/users/{id}", userId))
-        .andExpect(status().isNoContent());
+        .andExpect(jsonPath("$.data.firstName", is("Dolly")));
   }
 
   @Test
   void shouldUpdateUserOnPut() throws Exception {
-    // Create a user
-    String response = mockMvc.perform(post("/v1/api/users")
+    userCreateDto.setEmail("changed.email@example.com");
+    userCreateDto.setFirstName("Anna");
+    String response = mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(userCreateDto)))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.data.firstName", is("John")))
+        .andExpect(jsonPath("$.data.firstName", is("Anna")))
         .andDo(print())
         .andReturn()
         .getResponse()
         .getContentAsString();
 
-    // Extract the ID from the response
     String userId = JsonPath.parse(response).read("$.data.id");
 
-    mockMvc.perform(MockMvcRequestBuilders.put("/v1/api/users/{id}", userId)
+    userReadDto.setEmail("update.put@example.com");
+    mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/users/{id}", userId)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(userReadDto)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.phone", is(userReadDto.getPhone())));
+        .andExpect(jsonPath("$.data.email", is(userReadDto.getEmail())));
+  }
+
+  @Test
+  void shouldDeleteUserOnDelete() throws Exception {
+    userCreateDto.setEmail("Somethin@example.com");
+    String response = performPostUser(userCreateDto)
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.data.firstName", is("Rony")))
+        .andDo(print())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    String userId = JsonPath.parse(response).read("$.data.id");
+
+    // Delete the user
+    mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/users/{id}", userId))
+        .andExpect(status().isNoContent());
   }
 
   private ResultActions performPostUser(UserCreateDTO userCreateDTO) throws Exception {
-    return mockMvc.perform(post("/v1/api/users")
+    return mockMvc.perform(post("/api/v1/users")
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(userCreateDTO)));
   }

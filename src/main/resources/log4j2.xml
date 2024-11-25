@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
+        </Console>
+        <File name="AllLogs" fileName="logs/all.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
+        </File>
+        <File name="ErrorLogs" fileName="logs/error.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
+        </File>
+        <File name="InfoLogs" fileName="logs/info.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="warn">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AllLogs"/>
+        </Root>
+        <Logger name="ErrorLogger" level="error" additivity="false">
+            <AppenderRef ref="ErrorLogs"/>
+        </Logger>
+        <Logger name="InfoLogger" level="info" additivity="false">
+            <AppenderRef ref="InfoLogs"/>
+        </Logger>
+        <Logger name="fs19.java.backend" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AllLogs"/>
+            <AppenderRef ref="ErrorLogs" level="error"/>
+            <AppenderRef ref="InfoLogs" level="info"/>
+        </Logger>
+        <Logger name="org.springframework" level="warn" additivity="false">
+            <AppenderRef ref="ErrorLogs"/>
+        </Logger>
+    </Loggers>
+</Configuration>

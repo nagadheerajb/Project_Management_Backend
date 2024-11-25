@@ -1,31 +1,34 @@
 package fs19.java.backend.company;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fs19.java.backend.application.dto.company.CompanyDTO;
-import fs19.java.backend.domain.entity.Company;
-import fs19.java.backend.domain.abstraction.CompanyRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import fs19.java.backend.application.dto.company.CompanyRequestDTO;
+import fs19.java.backend.application.dto.company.CompanyResponseDTO;
+import fs19.java.backend.application.dto.company.CompanyUpdateDTO;
+import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
+import fs19.java.backend.presentation.shared.response.GlobalResponse;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class CompanyControllerTest {
+@Transactional
+@Commit
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class CompanyControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -34,66 +37,96 @@ public class CompanyControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private CompanyRepository companyRepository;
+    private UserJpaRepo userJpaRepo;
 
-    private Company existingCompany;
+    private static UUID testCompanyId;
+    private static UUID testUserId;
+
+    private static final String BASE_URL = "/api/v1/companies";
 
     @BeforeEach
-    public void setUp() {
-        existingCompany = new Company(UUID.randomUUID(), "Test Company", null, UUID.randomUUID());
-        companyRepository.save(existingCompany);
+    void setUp() {
+        // Retrieve a user from the repository for the createdBy field
+        testUserId = userJpaRepo.findAll().get(0).getId();
     }
 
     @Test
-    public void testCreateCompany() throws Exception {
-        UUID createdBy = UUID.randomUUID();
-        CompanyDTO request = new CompanyDTO(null, "New Company", null, createdBy);
+    @Order(1)
+    @DisplayName("Test Create Company")
+    void testCreateCompany() throws Exception {
+        CompanyRequestDTO request = new CompanyRequestDTO();
+        request.setName("Example Company");
+        request.setCreatedBy(testUserId);
 
-        mockMvc.perform(post("/api/v1/companies")
+        String responseContent = mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code", is(201)))
-                .andExpect(jsonPath("$.data.name", is("New Company")));
+                .andExpect(jsonPath("$.data.name").value("Example Company"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        saveIdForExecuteTest(responseContent);
     }
 
     @Test
-    public void testUpdateCompany() throws Exception {
-        CompanyDTO request = new CompanyDTO(existingCompany.getId(), "Updated Company", null, existingCompany.getCreatedBy());
+    @Order(2)
+    @DisplayName("Test Get Company by ID")
+    void testGetCompanyById() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/" + testCompanyId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("Example Company"));
+    }
 
-        mockMvc.perform(put("/api/v1/companies/" + existingCompany.getId())
+    @Test
+    @Order(3)
+    @DisplayName("Test Update Company")
+    void testUpdateCompany() throws Exception {
+        CompanyUpdateDTO updateRequest = new CompanyUpdateDTO();
+        updateRequest.setName("Updated Company");
+        updateRequest.setCreatedBy(testUserId);
+
+        mockMvc.perform(put(BASE_URL + "/" + testCompanyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.name", is("Updated Company")));
+                .andExpect(jsonPath("$.data.name").value("Updated Company"));
     }
 
     @Test
-    public void testGetCompanyById() throws Exception {
-        mockMvc.perform(get("/api/v1/companies/" + existingCompany.getId()))
+    @Order(4)
+    @DisplayName("Test Get All Companies")
+    void testGetAllCompanies() throws Exception {
+        mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.name", is(existingCompany.getName())));
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].name").value("ABC"));
     }
 
     @Test
-    public void testGetAllCompanies() throws Exception {
-        mockMvc.perform(get("/api/v1/companies"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data").isArray());
-    }
-
-    @Test
-    public void testDeleteCompany() throws Exception {
-        mockMvc.perform(delete("/api/v1/companies/" + existingCompany.getId()))
+    @Order(5)
+    @DisplayName("Test Delete Company by ID")
+    void testDeleteCompanyById() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/" + testCompanyId))
                 .andExpect(status().isNoContent());
     }
 
-    private ResultActions performPostCompany(CompanyDTO request) throws Exception {
-        return mockMvc.perform(post("/api/v1/companies")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+    @Test
+    @Order(6)
+    @DisplayName("Test Cleanup - Company does not exist")
+    void testCleanup() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/" + testCompanyId))
+                .andExpect(status().isNotFound());
+    }
+
+    private void saveIdForExecuteTest(String responseContent) throws JsonProcessingException {
+        GlobalResponse<CompanyResponseDTO> response = objectMapper.readValue(responseContent, GlobalResponse.class);
+        Object data = response.getData();
+        if (data instanceof LinkedHashMap) {
+            LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) data;
+            Object id = map.get("id");
+            testCompanyId = UUID.fromString((String) id);
+        }
     }
 }

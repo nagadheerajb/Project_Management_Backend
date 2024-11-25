@@ -1,8 +1,12 @@
 package fs19.java.backend.application.mapper;
 
+import fs19.java.backend.application.dto.role.RoleRequestDTO;
 import fs19.java.backend.application.dto.role.RoleResponseDTO;
+import fs19.java.backend.domain.entity.Company;
 import fs19.java.backend.domain.entity.Role;
+import fs19.java.backend.presentation.shared.Utilities.DateAndTime;
 import fs19.java.backend.presentation.shared.status.ResponseStatus;
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,4 +42,18 @@ public class RoleMapper {
     }
 
 
+    /**
+     * Convert request object to entity object
+     *
+     * @param roleRequestDTO
+     * @param company
+     * @return
+     */
+    public static Role toRole(@Valid RoleRequestDTO roleRequestDTO, Company company) {
+        Role myRole = new Role();
+        myRole.setName(roleRequestDTO.getName());
+        myRole.setCreatedDate(DateAndTime.getDateAndTime());
+        myRole.setCompany(company);
+        return myRole;
+    }
 }

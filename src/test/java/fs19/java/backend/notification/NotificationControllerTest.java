@@ -5,27 +5,39 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fs19.java.backend.application.dto.notification.NotificationDTO;
-import fs19.java.backend.domain.abstraction.NotificationRepository;
-import fs19.java.backend.domain.abstraction.UserRepository;
-import fs19.java.backend.domain.entity.Notification;
+import fs19.java.backend.domain.entity.Project;
 import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.domain.entity.enums.NotificationType;
+import fs19.java.backend.infrastructure.JpaRepositories.NotificationJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.ProjectJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
+import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
+@Commit
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class NotificationControllerTest {
 
     @Autowired
@@ -35,76 +47,114 @@ public class NotificationControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private NotificationRepository notificationRepository;
+    private NotificationJpaRepo notificationRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private ProjectJpaRepo projectRepository;
 
-    private Notification existingNotification;
-    private User mentionedByUser;
-    private User mentionedToUser;
+    @Autowired
+    private UserJpaRepo userRepository;
+
+    private static UUID testNotificationId;
+    private static UUID testProjectId;
+    private static UUID testMentionedById;
+    private static UUID testMentionedToId;
+
+    private static final String BASE_URL = "/api/v1/notifications";
 
     @BeforeEach
     public void setUp() {
-        mentionedByUser = new User(UUID.randomUUID(), "Alice", "Smith", "alice.smith@example.com", "password", "123456789", null, "profile1.jpg");
-        mentionedToUser = new User(UUID.randomUUID(), "Bob", "Johnson", "bob.johnson@example.com", "password", "987654321", null, "profile2.jpg");
-
-        userRepository.saveUser(mentionedByUser);
-        userRepository.saveUser(mentionedToUser);
-
-        existingNotification = new Notification(UUID.randomUUID(), "Test Notification", NotificationType.PROJECT_CREATED, ZonedDateTime.now(), false, UUID.randomUUID(), mentionedByUser.getId(), mentionedToUser.getId());
-        notificationRepository.save(existingNotification);
+        // Retrieve or create users
+        User mentionedByUser = userRepository.findAll().get(0);
+        testMentionedById = mentionedByUser.getId();
+        User mentionedToUser = userRepository.findAll().get(0);
+        testMentionedToId = mentionedToUser.getId();
+        Project existingProject = projectRepository.findAll().get(0);
+        testProjectId = existingProject.getId();
     }
 
     @Test
+    @Order(1)
+    @DisplayName("Test Create Notification")
     public void testCreateNotification() throws Exception {
-        NotificationDTO request = new NotificationDTO(null, "New Notification", NotificationType.PROJECT_INVITATION, null, false, UUID.randomUUID(), mentionedByUser.getId(), mentionedToUser.getId());
+        NotificationDTO request = new NotificationDTO();
+        request.setContent("New Notification");
+        request.setNotifyType(NotificationType.PROJECT_INVITATION);
+        request.setProjectId(testProjectId);
+        request.setMentionedBy(testMentionedById);
+        request.setMentionedTo(testMentionedToId);
 
-        mockMvc.perform(post("/api/v1/notifications")
+        String responseContent = mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code", is(201)))
-                .andExpect(jsonPath("$.data.content", is("New Notification")));
+                .andExpect(jsonPath("$.data.content", is("New Notification")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        saveIdForExecuteTest(responseContent);
     }
 
     @Test
-    public void testUpdateNotification() throws Exception {
-        NotificationDTO request = new NotificationDTO(existingNotification.getId(), "Updated Notification", NotificationType.PROJECT_UPDATED, null, false, UUID.randomUUID(), mentionedByUser.getId(), mentionedToUser.getId());
-
-        mockMvc.perform(put("/api/v1/notifications/" + existingNotification.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.content", is("Updated Notification")));
-    }
-
-    @Test
+    @Order(2)
+    @DisplayName("Test Get Notification by ID")
     public void testGetNotificationById() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications/" + existingNotification.getId()))
+        mockMvc.perform(get(BASE_URL + "/" + testNotificationId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data.content", is(existingNotification.getContent())));
+                .andExpect(jsonPath("$.data.content").value("New Notification"));
     }
 
     @Test
+    @Order(3)
+    @DisplayName("Test Update Notification")
+    public void testUpdateNotification() throws Exception {
+        NotificationDTO updateRequest = new NotificationDTO();
+        updateRequest.setContent("Updated Notification");
+        updateRequest.setNotifyType(NotificationType.PROJECT_CREATED);
+        updateRequest.setProjectId(testProjectId);
+        updateRequest.setMentionedBy(testMentionedById);
+        updateRequest.setMentionedTo(testMentionedToId);
+        updateRequest.setRead(false);
+
+        mockMvc.perform(put(BASE_URL + "/" + testNotificationId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(200)))
+                .andExpect(jsonPath("$.data.content").value("Updated Notification"));
+    }
+
+    @Test
+    @Order(4)
+    @DisplayName("Test Get All Notifications")
     public void testGetAllNotifications() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications"))
+        mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(200)))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].content").value("You have a new task assigned."));
     }
 
     @Test
+    @Order(5)
+    @DisplayName("Test Delete Notification by ID")
     public void testDeleteNotification() throws Exception {
-        mockMvc.perform(delete("/api/v1/notifications/" + existingNotification.getId()))
+        mockMvc.perform(delete(BASE_URL + "/" + testNotificationId))
                 .andExpect(status().isNoContent());
     }
 
-    private ResultActions performPostNotification(NotificationDTO request) throws Exception {
-        return mockMvc.perform(post("/api/v1/notifications")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+    private void saveIdForExecuteTest(String responseContent) throws JsonProcessingException {
+        GlobalResponse<NotificationDTO> response = objectMapper.readValue(responseContent, GlobalResponse.class);
+        Object data = response.getData();
+        if (data instanceof LinkedHashMap) {
+            LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) data;
+            Object id = map.get("id");
+            if (id != null) {
+                testNotificationId = UUID.fromString((String) id);
+            }
+        }
     }
 }

@@ -12,15 +12,15 @@ import java.util.UUID;
  */
 public interface RoleService {
 
-    RoleResponseDTO createRole(@Valid RoleRequestDTO roleRequestDTO);
+    RoleResponseDTO save(@Valid RoleRequestDTO roleRequestDTO);
 
-    RoleResponseDTO updateRole(UUID roleId, @Valid RoleRequestDTO roleMDDTO);
+    RoleResponseDTO update(UUID roleId, @Valid RoleRequestDTO roleMDDTO);
 
-    RoleResponseDTO deleteRole(UUID roleId);
+    RoleResponseDTO delete(UUID roleId);
 
-    RoleResponseDTO getRoleById(UUID roleId);
+    RoleResponseDTO findById(UUID roleId);
 
-    List<RoleResponseDTO> getRoles();
+    List<RoleResponseDTO> findAll();
 
-    RoleResponseDTO getRoleByName(String name);
+    RoleResponseDTO findByName(String name);
 }

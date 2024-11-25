@@ -3,6 +3,7 @@ package fs19.java.backend.application.dto.task;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fs19.java.backend.domain.entity.enums.Priority;
 import fs19.java.backend.domain.entity.enums.TaskStatus;
+import fs19.java.backend.domain.entity.enums.ValidPriority;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,7 +37,7 @@ public class TaskRequestDTO {
     @Schema(type = "Attachment", format = "Object", description = "Task attachments can add here")
     private List<String> attachments;
     @Schema(type = "Enum", format = "Enum", description = "TaskStatus define here")
-    private TaskStatus taskStatus;
+    private String taskStatus;
     @Schema(type = "uuid", format = "uuid", description = "Unique project id define here")
     private UUID projectId;
     @Schema(type = "uuid", format = "uuid", description = "Unique created user id define here")
@@ -44,5 +45,6 @@ public class TaskRequestDTO {
     @Schema(type = "uuid", format = "uuid", description = "Unique assign user id define here")
     private UUID assignedUserId;
     @Schema(type = "Enum", format = "Enum", description = "Task priority define here")
-    private Priority priority;
+    @ValidPriority
+    private String priority;
 }
