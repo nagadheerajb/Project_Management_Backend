@@ -12,7 +12,7 @@ public record LoginRequestDTO(
         @NotBlank(message = "Email is required")
         String email,
         @NotBlank(message = "Password is required")
-        @Size(min = 1, max = 40, message = "Password must be between 6 and 40 characters")
+        @Size(min = 6, message = "Password should be at least 8 characters long")
         String password
 ) {
 }

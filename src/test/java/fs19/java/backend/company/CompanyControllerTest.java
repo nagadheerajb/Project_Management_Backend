@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @Commit
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CompanyControllerTest {
 
@@ -52,6 +55,7 @@ class CompanyControllerTest {
 
     @Test
     @Order(1)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Create Company")
     void testCreateCompany() throws Exception {
         CompanyRequestDTO request = new CompanyRequestDTO();
@@ -72,6 +76,7 @@ class CompanyControllerTest {
 
     @Test
     @Order(2)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Company by ID")
     void testGetCompanyById() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testCompanyId))
@@ -81,6 +86,7 @@ class CompanyControllerTest {
 
     @Test
     @Order(3)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Update Company")
     void testUpdateCompany() throws Exception {
         CompanyUpdateDTO updateRequest = new CompanyUpdateDTO();
@@ -96,16 +102,18 @@ class CompanyControllerTest {
 
     @Test
     @Order(4)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get All Companies")
     void testGetAllCompanies() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].name").value("ABC"));
+                .andExpect(jsonPath("$.data[0].name").value("Company-A"));
     }
 
     @Test
     @Order(5)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Delete Company by ID")
     void testDeleteCompanyById() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testCompanyId))
@@ -114,6 +122,7 @@ class CompanyControllerTest {
 
     @Test
     @Order(6)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Cleanup - Company does not exist")
     void testCleanup() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testCompanyId))

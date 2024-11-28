@@ -29,7 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,7 @@ import java.util.UUID;
 @AutoConfigureMockMvc
 @Transactional
 @Commit
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class WorkspaceControllerTest {
 
@@ -78,6 +81,7 @@ public class WorkspaceControllerTest {
 
     @Test
     @Order(1)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Create Workspace")
     void testCreateWorkspace() throws Exception {
         WorkspaceRequestDTO request = new WorkspaceRequestDTO();
@@ -101,6 +105,7 @@ public class WorkspaceControllerTest {
 
     @Test
     @Order(2)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Workspace by ID")
     void testGetWorkspaceById() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testWorkspaceId))
@@ -110,6 +115,7 @@ public class WorkspaceControllerTest {
 
     @Test
     @Order(3)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Update Workspace")
     void testUpdateWorkspace() throws Exception {
         WorkspaceUpdateDTO updateRequest = new WorkspaceUpdateDTO();
@@ -127,6 +133,7 @@ public class WorkspaceControllerTest {
 
     @Test
     @Order(4)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get All Workspaces")
     void testGetAllWorkspaces() throws Exception {
         mockMvc.perform(get(BASE_URL))
@@ -137,6 +144,7 @@ public class WorkspaceControllerTest {
 
     @Test
     @Order(5)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Delete Workspace by ID")
     void testDeleteWorkspaceById() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testWorkspaceId))
@@ -145,6 +153,7 @@ public class WorkspaceControllerTest {
 
     @Test
     @Order(6)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Non-Existent Workspace")
     void testGetNonExistentWorkspace() throws Exception {
         UUID nonExistentId = UUID.randomUUID();

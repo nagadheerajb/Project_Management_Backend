@@ -14,6 +14,7 @@ import fs19.java.backend.presentation.shared.exception.ProjectNotFoundException;
 import fs19.java.backend.presentation.shared.exception.UserNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -33,6 +34,9 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationJpaRepo notificationRepository;
     private final UserJpaRepo userRepository;
     private final ProjectJpaRepo projectRepository;
+
+    @Autowired
+    private NotificationSender notificationSender;
 
     public NotificationServiceImpl(NotificationJpaRepo notificationRepository, UserJpaRepo userRepository, ProjectJpaRepo projectRepository) {
         this.notificationRepository = notificationRepository;
@@ -59,6 +63,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         Notification savedNotification = notificationRepository.save(notification);
         logger.info("Notification created successfully: {}", savedNotification);
+
+        // Send notification via RabbitMQ
+        notificationSender.sendNotification(savedNotification.getContent());
+
         return NotificationMapper.toDTO(savedNotification);
     }
 
@@ -115,6 +123,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         Notification savedNotification = notificationRepository.save(existingNotification);
         logger.info("Notification updated successfully: {}", savedNotification);
+
+        // Send notification via RabbitMQ (optional if update also requires sending)
+        notificationSender.sendNotification(savedNotification.getContent());
+
         return NotificationMapper.toDTO(savedNotification);
     }
 
@@ -146,7 +158,5 @@ public class NotificationServiceImpl implements NotificationService {
         }
         notificationRepository.deleteById(id);
         logger.info("Notification with ID: {} deleted successfully", id);
-        //User createdBy = SecurityUtils.getCurrentUser();
-        //activityLoggerService.logActivity(EntityType.COMPANY, id, ActionType.DELETED, createdBy.getId());
     }
 }

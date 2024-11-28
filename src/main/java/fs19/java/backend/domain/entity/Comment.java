@@ -22,10 +22,8 @@ public class Comment {
     private Task taskId;
     @Column(nullable = false)
     private String content;
-
     @Column
     private ZonedDateTime createdDate;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id")
     private User createdBy;

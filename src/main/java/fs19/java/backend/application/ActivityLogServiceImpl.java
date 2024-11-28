@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,13 +38,22 @@ public class ActivityLogServiceImpl implements ActivityLogService {
     @Override
     public ActivityLogDTO createActivityLog(ActivityLogDTO activityLogDTO) {
         logger.info("Creating activity log: {}", activityLogDTO);
-        User user = userRepository.findById(activityLogDTO.getUserId())
-                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, activityLogDTO.getUserId())));
-        ActivityLog activityLog = ActivityLogMapper.toEntity(activityLogDTO, user);
-        activityLog.setCreatedDate(ZonedDateTime.now());
-        ActivityLog savedActivityLog = activityLogRepository.save(activityLog);
-        logger.info("Activity log created successfully: {}", savedActivityLog);
-        return ActivityLogMapper.toDTO(savedActivityLog);
+//        User user = userRepository.findById(activityLogDTO.getUserId())
+//                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, activityLogDTO.getUserId())));
+        if (activityLogDTO.getUserId() == null) {
+            logger.info("Activity log Not created: Created User Not Found: {}", activityLogDTO);
+            return new ActivityLogDTO();
+        }
+        Optional<User> user = userRepository.findById(activityLogDTO.getUserId());
+        if (user.isPresent()) {
+            ActivityLog activityLog = ActivityLogMapper.toEntity(activityLogDTO, user.get());
+            activityLog.setCreatedDate(ZonedDateTime.now());
+            ActivityLog savedActivityLog = activityLogRepository.save(activityLog);
+            logger.info("Activity log created successfully: {}", savedActivityLog);
+            return ActivityLogMapper.toDTO(savedActivityLog);
+        }
+        logger.info("Activity log Not created: Created User Not Found: {}", activityLogDTO);
+        return new ActivityLogDTO();
     }
 
     @Override
@@ -115,4 +125,26 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         //User createdBy = SecurityUtils.getCurrentUser();
         //activityLoggerService.logActivity(EntityType.COMPANY, id, ActionType.DELETED, createdBy.getId());
     }
+
+    @Override
+    public List<ActivityLogDTO> getActivityLogsByEntity(UUID entityId) {
+        String entityType = determineEntityType(entityId);
+        List<ActivityLog> logs = activityLogRepository.findLogsByEntity(entityId, entityType);
+        return logs.stream().map(ActivityLogMapper::toDTO).collect(Collectors.toList());
+    }
+
+    private String determineEntityType(UUID entityId) {
+        if (activityLogRepository.findCompanyById(entityId).isPresent()) {
+            return "COMPANY";
+        } else if (activityLogRepository.findWorkspaceById(entityId).isPresent()) {
+            return "WORKSPACE";
+        } else if (activityLogRepository.findProjectById(entityId).isPresent()) {
+            return "PROJECT";
+        } else if (activityLogRepository.findTaskById(entityId).isPresent()) {
+            return "TASK";
+        } else {
+            throw new IllegalArgumentException("Entity ID not found in any known entities.");
+        }
+    }
+
 }

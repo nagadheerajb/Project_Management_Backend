@@ -1,8 +1,6 @@
 package fs19.java.backend.application.dto.task;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import fs19.java.backend.domain.entity.enums.Priority;
-import fs19.java.backend.domain.entity.enums.TaskStatus;
 import fs19.java.backend.domain.entity.enums.ValidPriority;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

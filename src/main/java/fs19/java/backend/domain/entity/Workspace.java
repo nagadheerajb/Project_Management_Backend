@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 @Getter
 @Setter
@@ -18,13 +19,14 @@ public class Workspace {
     @GeneratedValue(generator = "UUID")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 45)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String description;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 45)
     private WorkspaceType type;
 
     @Column
@@ -37,4 +39,7 @@ public class Workspace {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company companyId;
+
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkspaceUser> workspaceUsers;
 }

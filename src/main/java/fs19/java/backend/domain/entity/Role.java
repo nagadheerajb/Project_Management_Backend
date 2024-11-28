@@ -24,7 +24,7 @@ public class Role {
     @Column(updatable = false, nullable = false)
     private UUID id;
     @NotNull
-    @Column(nullable = false, length = 25)
+    @Column(nullable = false, length = 45)
     private String name;
     @NotNull
     @Column(nullable = false)
@@ -32,7 +32,7 @@ public class Role {
     private ZonedDateTime createdDate;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(name = "company_id", referencedColumnName = "id", nullable = false)
     private Company company;
 
 }

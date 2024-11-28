@@ -14,8 +14,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -23,6 +25,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class UserControllerTest {
 
   @Autowired
@@ -33,6 +36,8 @@ class UserControllerTest {
 
   private UserCreateDTO userCreateDto;
   private UserReadDTO userReadDto;
+
+  private static int emailCounter = 1;
 
   @BeforeEach
   void setUp() {
@@ -55,6 +60,7 @@ class UserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldCreateUserOnPost() throws Exception {
 
     String jsonResponse = mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users"))
@@ -65,7 +71,7 @@ class UserControllerTest {
 
     int arrayLength = JsonPath.parse(jsonResponse).read("$.data.length()");
 
-    userReadDto.setEmail("post.request@example.com");
+    userCreateDto.setEmail("post.request" + emailCounter++ + "@example.com");
     performPostUser(userCreateDto)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.code", is(201)))
@@ -78,6 +84,7 @@ class UserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldGetAllUsersOnGet() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users"))
         .andExpect(status().isOk())
@@ -86,9 +93,10 @@ class UserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldGetUserByIdOnGet() throws Exception {
     userCreateDto.setFirstName("Dolly");
-    userCreateDto.setEmail("get.id@example.com"); // need unique email
+    userCreateDto.setEmail("get.id" + emailCounter++ + "@example.com"); // need unique email
     String response = performPostUser(userCreateDto)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.data.firstName", is("Dolly")))
@@ -105,8 +113,9 @@ class UserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldUpdateUserOnPut() throws Exception {
-    userCreateDto.setEmail("changed.email@example.com");
+    userCreateDto.setEmail("changed.email" + emailCounter++ + "@example.com");
     userCreateDto.setFirstName("Anna");
     String response = mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -120,7 +129,6 @@ class UserControllerTest {
 
     String userId = JsonPath.parse(response).read("$.data.id");
 
-    userReadDto.setEmail("update.put@example.com");
     mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/users/{id}", userId)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(userReadDto)))
@@ -129,8 +137,9 @@ class UserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldDeleteUserOnDelete() throws Exception {
-    userCreateDto.setEmail("Somethin@example.com");
+    userCreateDto.setEmail("delete" + emailCounter++ + "@example.com");
     String response = performPostUser(userCreateDto)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.data.firstName", is("Rony")))

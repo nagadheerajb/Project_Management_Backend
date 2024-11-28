@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @Commit
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ActivityLogControllerTest {
 
@@ -56,6 +59,7 @@ class ActivityLogControllerTest {
 
     @Test
     @Order(1)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Create Activity Log")
     void testCreateActivityLog() throws Exception {
         ActivityLogDTO request = new ActivityLogDTO();
@@ -78,6 +82,7 @@ class ActivityLogControllerTest {
 
     @Test
     @Order(2)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Activity Log by ID")
     void testGetActivityLogById() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testActivityLogId))
@@ -87,6 +92,7 @@ class ActivityLogControllerTest {
 
     @Test
     @Order(3)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Update Activity Log")
     void testUpdateActivityLog() throws Exception {
         ActivityLogDTO updateRequest = new ActivityLogDTO();
@@ -105,6 +111,7 @@ class ActivityLogControllerTest {
 
     @Test
     @Order(4)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get All Activity Logs")
     void testGetAllActivityLogs() throws Exception {
         mockMvc.perform(get(BASE_URL))
@@ -115,6 +122,7 @@ class ActivityLogControllerTest {
 
     @Test
     @Order(5)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Delete Activity Log by ID")
     void testDeleteActivityLogById() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testActivityLogId))

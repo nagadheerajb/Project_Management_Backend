@@ -9,17 +9,11 @@ import java.util.UUID;
 
 public interface TaskService {
     TaskResponseDTO create(@Valid TaskRequestDTO taskRequestDTO);
-
     TaskResponseDTO update(UUID taskId, @Valid TaskRequestDTO taskRequestDTO);
-
     TaskResponseDTO delete(UUID taskId);
-
     List<TaskResponseDTO> findAll();
-
     TaskResponseDTO getById(UUID taskId);
-
     List<TaskResponseDTO> getByAssignedId(UUID userId);
-
     List<TaskResponseDTO> getByCreatedUserId(UUID createdUserId);
 }
 

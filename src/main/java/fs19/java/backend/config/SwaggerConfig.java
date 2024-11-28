@@ -32,7 +32,8 @@ public class SwaggerConfig {
                         .addResponses("Created", createResponse("201", "Resource created successfully"))
                         .addResponses("NoContent", createResponse("204", "No content")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                .components(new io.swagger.v3.oas.models.Components()
+                .addSecurityItem(new SecurityRequirement().addList("workspaceId"))
+                .components(new Components()
                         .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
                                         .name("Authorization")
@@ -40,7 +41,13 @@ public class SwaggerConfig {
                                         .in(SecurityScheme.In.HEADER)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("JWT Authorization header using the Bearer scheme")));
+                                        .description("JWT Authorization header using the Bearer scheme"))
+                        .addSecuritySchemes("workspaceId",
+                                new SecurityScheme()
+                                        .name("workspaceId")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .description("Workspace Identifier")));
     }
 
     private ApiResponse createResponse(String code, String description) {

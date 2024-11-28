@@ -25,7 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,7 @@ import java.util.UUID;
 @AutoConfigureMockMvc
 @Transactional
 @Commit
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class NotificationControllerTest {
 
@@ -75,6 +78,7 @@ public class NotificationControllerTest {
 
     @Test
     @Order(1)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Create Notification")
     public void testCreateNotification() throws Exception {
         NotificationDTO request = new NotificationDTO();
@@ -99,6 +103,7 @@ public class NotificationControllerTest {
 
     @Test
     @Order(2)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Notification by ID")
     public void testGetNotificationById() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testNotificationId))
@@ -109,6 +114,7 @@ public class NotificationControllerTest {
 
     @Test
     @Order(3)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Update Notification")
     public void testUpdateNotification() throws Exception {
         NotificationDTO updateRequest = new NotificationDTO();
@@ -129,6 +135,7 @@ public class NotificationControllerTest {
 
     @Test
     @Order(4)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get All Notifications")
     public void testGetAllNotifications() throws Exception {
         mockMvc.perform(get(BASE_URL))
@@ -140,6 +147,7 @@ public class NotificationControllerTest {
 
     @Test
     @Order(5)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Delete Notification by ID")
     public void testDeleteNotification() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testNotificationId))

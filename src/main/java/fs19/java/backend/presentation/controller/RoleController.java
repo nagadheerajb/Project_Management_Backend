@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @Tag(name = "Role", description = "Manage Roles")
 @RestController
-@RequestMapping("app/v1/roles")
+@RequestMapping("api/v1/roles")
 public class RoleController {
 
     @Autowired

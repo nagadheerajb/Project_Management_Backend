@@ -53,13 +53,7 @@ public class WorkspaceUserServiceImpl implements WorkspaceUserService {
     User user = findUserById(workspaceUsersDTO.getUserId());
     Role role = findRoleById(workspaceUsersDTO.getRoleId());
     Workspace workspace = findWorkspaceById(workspaceUsersDTO.getWorkspaceId());
-
-    WorkspaceUser workspaceUser = WorkspaceUserMapper.toEntity(workspaceUsersDTO, user, role, workspace);
-    workspaceUser.setId(UUID.randomUUID());
-    workspaceUser.setUser(user);
-    workspaceUser.setRole(role);
-    workspaceUser.setWorkspace(workspace);
-
+    WorkspaceUser workspaceUser = WorkspaceUserMapper.toEntity(user, role, workspace);
     workspaceUser = workspaceUserRepository.save(workspaceUser);
     logger.info("Workspace user created and saved: {}", workspaceUser);
     return WorkspaceUserMapper.toDTO(workspaceUser);
@@ -111,25 +105,24 @@ public class WorkspaceUserServiceImpl implements WorkspaceUserService {
   }
 
   private void updateWorkspaceUserFields(WorkspaceUserRequestDTO workspaceUsersDTO,
-      WorkspaceUser workspaceUser) {
+    WorkspaceUser workspaceUser) {
     logger.info("Updating workspace user fields with DTO: {}", workspaceUsersDTO);
-    if (workspaceUsersDTO.getRoleId() != null) {
+     if (workspaceUsersDTO.getRoleId() != null) {
       Role role = findRoleById(workspaceUsersDTO.getRoleId());
       logger.info("Role found: {}", role);
-
       workspaceUser.setRole(role);
-    }
-    if (workspaceUsersDTO.getWorkspaceId() != null) {
-      Workspace workspace = findWorkspaceById(workspaceUsersDTO.getWorkspaceId());
-      logger.info("Workspace found: {}", workspace);
 
-      workspaceUser.setWorkspace(workspace);
-    }
-    if (workspaceUsersDTO.getUserId() != null) {
-      User user = findUserById(workspaceUsersDTO.getUserId());
-      logger.info("User found: {}", user);
+      if (workspaceUsersDTO.getWorkspaceId() != null) {
+        Workspace workspace = findWorkspaceById(workspaceUsersDTO.getWorkspaceId());
+        logger.info("Workspace found: {}", workspace);
+        workspaceUser.setWorkspace(workspace);
+      }
 
-      workspaceUser.setUser(user);
+      if (workspaceUsersDTO.getUserId() != null) {
+        User user = findUserById(workspaceUsersDTO.getUserId());
+        logger.info("User found: {}", user);
+        workspaceUser.setUser(user);
+      }
     }
   }
 

@@ -1,4 +1,16 @@
 
+# User Management System
+- # Spring Boot Application with PostgreSQL, Hibernate, JPA, and JWT
+
+
+---
+
+## Team Members
+
+- [Danushka](https://github.com/Nandalochana)
+- [Naga](https://github.com/nagadheerajb)
+- [Shubhangi](https://github.com/shubhanginaik)
+
 
 # Teamwork
 
@@ -6,7 +18,151 @@
 - Database schema
 - Workable backend server with Spring Boot & Hibernate
 
----
+
+# Project Description
+
+This application is a Spring Boot-based backend service that provides:
+- Secure JWT-based authentication.
+- Data persistence using PostgreSQL.
+- Entity management using Hibernate and JPA.
+
+
+# Features
+
+- **User Management**
+    - User registration and login functionality
+    - User authentication using email/password
+    - User CRUD Operations: Create, read, update, and delete users
+    - Custom roles and permissions (e.g., Admin, Dev, PM)
+    - User profile management
+    - Customizable DTOs: Easily extendable User DTOs for different context
+    - Scalable Architecture: Designed with scalability and maintainability in mind
+    - API Documentation: Swagger-enabled API documentation for easy integration and testing
+  - **Projects and Workspaces**
+  - Ability to create and manage multiple projects/workspaces
+  - Project details: name, description, start/end dates, status
+  - **Tasks and Issues**
+  - Task/issue creation with title, description, priority, and deadline
+  - Task/issue tracking: status updates (e.g., To-Do, In Progress, Done)
+  - Activity tracking: status updates (e.g., To-Do, In Progress, Done)
+
+# Recommendations for Timeline-Based Projects
+
+This project was successfully completed in 3 weeks, with clear milestones and deliverables for each phase:
+
+- Planning and Setup
+-- Defined project scope, requirements, and deliverables.
+-- Established the project structure and database schema.
+-- Configured Spring Boot with security, JPA, and Swagger integrations.
+
+- Development
+* Implemented core features:
+-- Entity creation and validation.
+-- CRUD operations with role-based security.
+-- database schema creation.
+-- User registration and authentication.
+-- JWT token generation and validation.
+
+- Testing and Deployment
+- Integrated Postman and Swagger for API testing.
+- Performed code reviews to maintain quality and consistency
+- Documented the project (API docs, README, etc.)
+- Deployed a stable version for testing and feedback
+
+# Prerequisites
+
+-List the software and tools required to run the application.
+
+- Java 17 or later
+- Spring Boot
+- PostgreSQL
+- Maven
+- Postman
+- IDE (IntelliJ IDEA, Eclipse, etc.)
+- Git
+- JWT (JSON Web Token)
+- Hibernate
+- JPA (Java Persistence API)
+- Lombok
+- Swagger
+  
+
+# Getting Started
+
+## Cloning the Repository
+    
+- Clone the repository using the following command:
+    ```bash
+    git clone https://github.com/nagadheerajb/fs19-java-backend.git
+    ```
+  
+- Change the directory to the project root:
+    ```bash
+    cd fs19-java-backend
+    ```
+
+# Configuration
+
+- Database Setup:
+
+1. Configure the database in src/main/resources/application.properties:
+- Initialize the database:
+    ```properties
+    spring.datasource.url=jdbc:postgresql://localhost:5432/your_database_name
+    spring.datasource.username=your_username
+    spring.datasource.password=your_password
+    spring.jpa.hibernate.ddl-auto=create
+    ```
+  - Run the application
+  - The application will automatically create the necessary tables in the database.
+  - Once the database schema is created, stop the application and change the property to update:
+    ```properties
+    spring.jpa.hibernate.ddl-auto=update
+    ```
+    - Run the application again to apply the changes.
+    
+    
+- The application will start on port 8080 by default.
+- Open a web browser and navigate to `http://localhost:8080` to access the application.
+- Use Postman or Swagger to test the API endpoints.
+
+
+## Testing the application
+
+-- put the property create in the application.properties file
+- Run the application
+- The application will automatically create the necessary tables in the database.
+- run the test cases
+
+
+# Code Structure
+
+- The project follows a modular structure with separate packages for each layer:
+- Controller Layer: Handles HTTP requests and responses.
+- Service Layer: Contains business logic.
+- Application Layer: Contains DTOs, mappers, and other application-specific classes.
+- Repository Layer: Interacts with the database using JPA.
+- DTOs: Data transfer objects for request and response payloads.
+- config: Contains configuration classes for Swagger, JWT, and other configurations.
+
+
+# API Endpoints
+
+Please find the API documentation in the `api-docs` folder.
+
+
+## Team Collaboration Tools
+
+- Trello:
+-- Managed the project board with task assignments and status updates.
+-- Used columns like To Do, In Progress, Review, and Done to track progress.
+* Code Reviews:
+-- Regular peer reviews to ensure clean, maintainable code.
+-- Integrated code review checklists for consistency.
+* Communication:
+-- Daily stand-ups to synchronize progress.
+-- Slack/Email for discussions and quick resolutions.
+
 
 ## Menu
 

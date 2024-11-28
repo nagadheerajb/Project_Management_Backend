@@ -13,7 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @Commit
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TaskControllerTest {
 
@@ -43,10 +48,18 @@ class TaskControllerTest {
     private ProjectJpaRepo projectJpaRepo;
 
     private static UUID testTaskId;
-    private static final String BASE_URL = "/app/v1/tasks";
+    private static final String BASE_URL = "/api/v1/tasks";
+
+    @BeforeEach
+    void printAuthorities() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("User Authorities: " + auth.getAuthorities());
+    }
+
 
     @Test
     @Order(1)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Create Task")
     void testCreateTask() throws Exception {
         TaskRequestDTO request = new TaskRequestDTO();
@@ -73,6 +86,7 @@ class TaskControllerTest {
 
     @Test
     @Order(2)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Task by ID")
     void testGetTaskById() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testTaskId))
@@ -82,6 +96,7 @@ class TaskControllerTest {
 
     @Test
     @Order(3)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Update Task")
     void testUpdateTask() throws Exception {
         TaskRequestDTO updateRequest = new TaskRequestDTO();
@@ -103,6 +118,7 @@ class TaskControllerTest {
     @Test
     @Order(4)
     @DisplayName("Test Get All Tasks")
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     void testGetAllTasks() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
@@ -111,6 +127,7 @@ class TaskControllerTest {
 
     @Test
     @Order(5)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Tasks by Assigned User ID")
     void testGetTasksByAssignedUserId() throws Exception {
         UUID assignedUserId = UUID.randomUUID();
@@ -122,6 +139,7 @@ class TaskControllerTest {
 
     @Test
     @Order(6)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Tasks by Created User ID")
     void testGetTasksByCreatedUserId() throws Exception {
         UUID createdUserId = UUID.randomUUID();
@@ -133,6 +151,7 @@ class TaskControllerTest {
 
     @Test
     @Order(7)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Delete Task by ID")
     void testDeleteTaskById() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testTaskId))
@@ -141,6 +160,7 @@ class TaskControllerTest {
 
     @Test
     @Order(8)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Cleanup - Task Does Not Exist")
     void testCleanUp() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testTaskId))

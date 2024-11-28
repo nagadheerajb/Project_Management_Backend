@@ -36,11 +36,11 @@ public class UserReadDTO {
     @NotNull(message = "Email is required")
     private String email;
 
-    @Schema(type = "string", format = "string", description = "Password of the user")
+    @Schema(type = "string", format = "string", description = "Phone of the user")
     @Size(min = 10, max = 15, message = "Phone number must be between 10 and 15 characters long")
     private String phone;
 
-    @Schema(type = "string", format = "string", description = "Phone number of the user")
+   @Schema(type = "string", format = "string", description = "Created date of the user")
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private ZonedDateTime createdDate;
 

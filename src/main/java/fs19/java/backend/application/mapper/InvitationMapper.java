@@ -1,11 +1,12 @@
 package fs19.java.backend.application.mapper;
 
+import fs19.java.backend.application.dto.invitation.InvitationAcceptDTO;
 import fs19.java.backend.application.dto.invitation.InvitationRequestDTO;
 import fs19.java.backend.application.dto.invitation.InvitationResponseDTO;
-import fs19.java.backend.domain.entity.Company;
 import fs19.java.backend.domain.entity.Invitation;
 import fs19.java.backend.domain.entity.Role;
 import fs19.java.backend.domain.entity.User;
+import fs19.java.backend.domain.entity.Workspace;
 import fs19.java.backend.presentation.shared.Utilities.DateAndTime;
 import fs19.java.backend.presentation.shared.status.ResponseStatus;
 
@@ -22,10 +23,10 @@ public class InvitationMapper {
      * @return
      */
     public static InvitationResponseDTO toInvitationResponseDTO(Invitation invitation, ResponseStatus responseStatus) {
-        return new InvitationResponseDTO(invitation.getId(), invitation.isAccepted(), invitation.getExpiredAt(),
-                invitation.getEmail(), invitation.getCreatedBy().getId(),
+        return new InvitationResponseDTO(invitation.getId(), invitation.isAccepted(), invitation.getExpiredAt(), invitation.getEmail(),
+                invitation.getUrl(), invitation.getCreatedBy().getId(),
                 invitation.getRole() == null ? null : invitation.getRole().getId(),
-                invitation.getCompany() == null ? null : invitation.getCompany().getId(), responseStatus);
+                invitation.getWorkspace() == null ? null : invitation.getWorkspace().getId(), responseStatus);
     }
 
     /**
@@ -43,14 +44,19 @@ public class InvitationMapper {
         return responseDTOS;
     }
 
-    public static Invitation toInvitation(InvitationRequestDTO invitationRequestDTO, Role role, User user, Company company) {
+    public static Invitation toInvitation(InvitationRequestDTO invitationRequestDTO, Role role, User user, Workspace workspace, String url) {
         Invitation invitation = new Invitation();
         invitation.setExpiredAt(DateAndTime.getExpiredDateAndTime());
         invitation.setAccepted(false);
         invitation.setCreatedBy(user);
-        invitation.setCompany(company);
+        invitation.setWorkspace(workspace);
+        invitation.setUrl(url);
         invitation.setEmail(invitationRequestDTO.getEmail());
         invitation.setRole(role);
         return invitation;
+    }
+
+    public static InvitationAcceptDTO toInvitationAcceptDTO(Invitation invitation, ResponseStatus responseStatus) {
+        return new InvitationAcceptDTO(invitation.getUrl(), responseStatus);
     }
 }

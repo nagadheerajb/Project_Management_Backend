@@ -1,6 +1,7 @@
 package fs19.java.backend.config;
 
 import fs19.java.backend.application.UserDetailsServiceImpl;
+import fs19.java.backend.presentation.shared.exception.AuthenticationNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.UUID;
 
 /**
  * JWT request filter
@@ -42,9 +44,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     requestURI.startsWith("/webjars/")) {
                 filterChain.doFilter(request, response);
                 return;
+            } else if (requestURI.startsWith("/api/v1/invitation/")) {
+                filterChain.doFilter(request, response);
+                return;
             }
             String token = request.getHeader("Authorization");
-            // toDO: consider workspace_id : later
+            String workspaceId = request.getHeader("workspaceId");
             String username = null;
             if (token != null) {
                 String signature = getSignature(token);
@@ -56,26 +61,34 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if ((username != null && workspaceId != null) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUserNameAndWorkspaceId(username, UUID.fromString(workspaceId));
+                handleUserInfo(request, token, userDetails, workspaceId, username);
+            } else if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                if (jwtValidator.isTokenValid(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }
+                handleUserInfo(request, token, userDetails, workspaceId, username);
             }
             filterChain.doFilter(request, response);
         } catch (AccessDeniedException e) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.getWriter().write(e.getMessage());
+            throw new AuthenticationNotFoundException(e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private void handleUserInfo(HttpServletRequest request, String token, UserDetails userDetails, String workspaceId, String username) {
+        if (jwtValidator.isTokenValid(token, userDetails, workspaceId)) {
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(userDetails, userDetailsService.findUserByUserName(username), userDetails.getAuthorities());
+            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        }
+    }
+
     /**
      * Get the signature
+     *
      * @param jwt
      * @return
      */

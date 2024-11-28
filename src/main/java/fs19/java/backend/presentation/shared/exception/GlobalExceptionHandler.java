@@ -2,14 +2,16 @@ package fs19.java.backend.presentation.shared.exception;
 
 import fs19.java.backend.presentation.shared.response.ErrorItem;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -145,6 +147,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> UsernameNotFoundException(UsernameNotFoundException ex) {
+        logger.error("UserNot Found Exception: {}", ex.getMessage(), ex);
+        ErrorItem error = new ErrorItem(ex.getMessage());
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.PRECONDITION_REQUIRED.value(), List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.PRECONDITION_REQUIRED);
+    }
+
     @ExceptionHandler(InvitationLevelException.class)
     public ResponseEntity<GlobalResponse<Void>> handleInvitationLevelException(InvitationLevelException ex) {
         logger.error("InvitationLevelException: {}", ex.getMessage(), ex);
@@ -165,7 +175,33 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GlobalResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorItem error = new ErrorItem(ex.getMessage());
         GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.BAD_REQUEST.value(),
-            List.of(error));
+                List.of(error));
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(InvalidInvitationFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleIlleInvalidInvitationException(InvalidInvitationFoundException ex) {
+        ErrorItem error = new ErrorItem(ex.getMessage());
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.BAD_REQUEST.value(),
+                List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+
+    @ExceptionHandler(AuthenticationNotFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleAccessDeniedException(AuthenticationNotFoundException ex) {
+        ErrorItem error = new ErrorItem(ex.getMessage());
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.FORBIDDEN.value(),
+                List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(CredentialNotFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleCredentialDeniedException(CredentialNotFoundException ex) {
+        ErrorItem error = new ErrorItem(ex.getMessage());
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.FORBIDDEN.value(),
+                List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
 }

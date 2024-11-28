@@ -8,6 +8,7 @@ import fs19.java.backend.presentation.shared.response.ResponseHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 @Tag(name = "Role-Permission", description = "Manage Role-Permission")
 @RestController
-@RequestMapping("app/v1/rolePermissions")
+@RequestMapping("api/v1/rolePermissions")
 public class RolePermissionController {
 
     @Autowired
@@ -87,7 +88,7 @@ public class RolePermissionController {
      */
     @Operation(summary = "Get role-permissions by id", description = "Retrieves the details of all role-permissions by id.")
     @GetMapping("/{rolePermissionId}")
-    public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> getRolePermissionById(@PathVariable UUID rolePermissionId) {
+    public ResponseEntity<GlobalResponse<RolePermissionResponseDTO>> getRolePermissionById(@PathVariable @NotNull UUID rolePermissionId) {
         RolePermissionResponseDTO roleResponseDTO = rolePermissionService.findByPermissionId(rolePermissionId);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, roleResponseDTO.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), roleResponseDTO, ResponseHandler.convertResponseStatusToError(roleResponseDTO.getStatus())), responseCode);

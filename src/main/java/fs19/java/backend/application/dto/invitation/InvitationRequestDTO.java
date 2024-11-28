@@ -30,7 +30,7 @@ public class InvitationRequestDTO {
     @Schema(type = "uuid", format = "uuid", description = "invitation sending role Id")
     @NotNull(message = "Role id cannot be null")
     private UUID roleId;
-    @Schema(type = "uuid", format = "uuid", description = "invitation sending company Id")
-    @NotNull(message = "Company id cannot be null")
-    private UUID companyId;
+    @Schema(type = "uuid", format = "uuid", description = "invitation sending Workspace Id")
+    @NotNull(message = "Workspace id cannot be null")
+    private UUID workspaceId;
 }

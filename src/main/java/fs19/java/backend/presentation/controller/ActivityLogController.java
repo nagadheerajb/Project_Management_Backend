@@ -7,9 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springdoc.api.annotations.ParameterObject;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -70,5 +73,13 @@ public class ActivityLogController {
         activityLogService.deleteActivityLog(activityLogId);
         logger.info("Activity log deleted successfully with ID: {}", activityLogId);
         return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
+    }
+
+    @Operation(summary = "Get activity logs by entity ID", description = "Retrieves activity logs for a given entity and its related child entities.")
+    @GetMapping("/{entityId}/history")
+    public ResponseEntity<GlobalResponse<List<ActivityLogDTO>>> getActivityLogsByEntity(
+            @PathVariable UUID entityId) {
+        List<ActivityLogDTO> activityLogs = activityLogService.getActivityLogsByEntity(entityId);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), activityLogs), HttpStatus.OK);
     }
 }

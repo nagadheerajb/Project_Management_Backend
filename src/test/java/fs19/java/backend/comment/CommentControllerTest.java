@@ -14,7 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @Commit
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CommentControllerTest {
 
@@ -61,6 +64,7 @@ class CommentControllerTest {
 
     @Test
     @Order(1)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Create Comment")
     public void testCreateComment() throws Exception {
         CommentRequestDTO request = new CommentRequestDTO();
@@ -81,6 +85,7 @@ class CommentControllerTest {
 
     @Test
     @Order(2)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get Comment by ID")
     public void testGetCommentById() throws Exception {
         mockMvc.perform(get(BASE_URL + "/" + testCommentId))
@@ -90,6 +95,7 @@ class CommentControllerTest {
 
     @Test
     @Order(3)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Update Comment")
     public void testUpdateComment() throws Exception {
         CommentUpdateDTO updateRequest = new CommentUpdateDTO();
@@ -104,6 +110,7 @@ class CommentControllerTest {
 
     @Test
     @Order(4)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Get All Comments")
     public void testGetAllComments() throws Exception {
         mockMvc.perform(get(BASE_URL))
@@ -114,6 +121,7 @@ class CommentControllerTest {
 
     @Test
     @Order(5)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
     @DisplayName("Test Delete Comment by ID")
     public void testDeleteCommentById() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/" + testCommentId))

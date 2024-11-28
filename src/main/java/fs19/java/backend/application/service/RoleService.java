@@ -13,14 +13,9 @@ import java.util.UUID;
 public interface RoleService {
 
     RoleResponseDTO save(@Valid RoleRequestDTO roleRequestDTO);
-
     RoleResponseDTO update(UUID roleId, @Valid RoleRequestDTO roleMDDTO);
-
     RoleResponseDTO delete(UUID roleId);
-
     RoleResponseDTO findById(UUID roleId);
-
     List<RoleResponseDTO> findAll();
-
     RoleResponseDTO findByName(String name);
 }

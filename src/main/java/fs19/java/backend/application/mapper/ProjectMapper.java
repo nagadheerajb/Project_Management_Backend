@@ -24,7 +24,6 @@ public class ProjectMapper {
 
   public static Project toEntity(ProjectCreateDTO dto) {
     Project project = new Project();
-    project.setId(dto.getId());
     project.setName(dto.getName());
     project.setDescription(dto.getDescription());
     project.setStartDate(dto.getStartDate());

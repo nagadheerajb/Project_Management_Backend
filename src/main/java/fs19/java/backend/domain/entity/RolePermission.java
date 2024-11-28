@@ -27,10 +27,10 @@ public class RolePermission {
     private UUID id;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = false)
+    @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     private Role role;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "permission_id", nullable = false)
+    @JoinColumn(name = "permission_id", referencedColumnName = "id", nullable = false)
     private Permission permission;
 }

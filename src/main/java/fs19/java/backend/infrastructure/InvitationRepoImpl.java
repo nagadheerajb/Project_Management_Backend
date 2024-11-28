@@ -2,15 +2,11 @@ package fs19.java.backend.infrastructure;
 
 import fs19.java.backend.application.dto.invitation.InvitationRequestDTO;
 import fs19.java.backend.domain.abstraction.InvitationRepository;
-import fs19.java.backend.domain.entity.Company;
-import fs19.java.backend.domain.entity.Invitation;
-import fs19.java.backend.domain.entity.Role;
-import fs19.java.backend.domain.entity.User;
+import fs19.java.backend.domain.entity.*;
 import fs19.java.backend.infrastructure.JpaRepositories.CompanyJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.InvitationJpaRepo;
 import fs19.java.backend.presentation.shared.exception.InvitationLevelException;
 import fs19.java.backend.presentation.shared.exception.PermissionLevelException;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -35,14 +31,15 @@ public class InvitationRepoImpl implements InvitationRepository {
     }
 
     @Override
-    public Invitation update(UUID invitationId, InvitationRequestDTO invitationRequestDTO, Role role, User user, Company company) {
+    public Invitation update(UUID invitationId, InvitationRequestDTO invitationRequestDTO, Role role, User user, Workspace workspace, String url) {
         Invitation myInvitation = findById(invitationId);
         if (myInvitation != null) {
             myInvitation.setAccepted(invitationRequestDTO.isAccepted());
             myInvitation.setEmail(invitationRequestDTO.getEmail());
             myInvitation.setRole(role);
+            myInvitation.setUrl(url);
             myInvitation.setCreatedBy(user);
-            myInvitation.setCompany(company);
+            myInvitation.setWorkspace(workspace);
             myInvitation.setExpiredAt(invitationRequestDTO.getExpiredAt());
             return invitationJpaRepo.save(myInvitation);
         } else {

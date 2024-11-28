@@ -4,12 +4,12 @@ import fs19.java.backend.application.dto.role.RolePermissionRequestDTO;
 import fs19.java.backend.application.dto.role.RolePermissionResponseDTO;
 import fs19.java.backend.application.mapper.RolePermissionMapper;
 import fs19.java.backend.application.service.RolePermissionService;
+import fs19.java.backend.config.SecurityConfig;
 import fs19.java.backend.domain.entity.RolePermission;
 import fs19.java.backend.domain.entity.enums.ActionType;
 import fs19.java.backend.domain.entity.enums.EntityType;
 import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
 import fs19.java.backend.infrastructure.RolePermissionRepoImpl;
-import fs19.java.backend.presentation.controller.ActivityLogController;
 import fs19.java.backend.presentation.shared.status.ResponseStatus;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +26,7 @@ import java.util.UUID;
 @Service
 public class RolePermissionServiceImpl implements RolePermissionService {
 
-    private static final Logger logger = LogManager.getLogger(ActivityLogController.class);
+    private static final Logger logger = LogManager.getLogger(RolePermissionServiceImpl.class);
     private final RolePermissionRepoImpl rolePermissionRepo;
     private final ActivityLoggerService activityLoggerService;
     private final UserJpaRepo userJpaRepo;
@@ -59,7 +59,7 @@ public class RolePermissionServiceImpl implements RolePermissionService {
             activityLoggerService.logActivity(EntityType.ROLE_PERMISSION, responseDTO.getId(), ActionType.CREATED, userJpaRepo.findById(rolePermissionRequestDTO.getCreated_user()).get().getId());
             return responseDTO;
         }
-        logger.info("Record Already created,Please use the existing information (Role permission id :" + resultIfExist.getId() + ") {}", rolePermissionRepo);
+        logger.info("Record Already created,Please use the existing information (Role permission id :{}) {}", resultIfExist.getId(), rolePermissionRepo);
         return RolePermissionMapper.toPermissionResponseDTO(resultIfExist, ResponseStatus.ROLE_PERMISSION_ID_RECORD_ALREADY_EXIST);
     }
 
@@ -96,16 +96,12 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     /**
      * Get role permission by record id
      *
-     * @param permissionId
+     * @param rolePermissionId
      * @return
      */
     @Override
-    public RolePermissionResponseDTO findByPermissionId(UUID permissionId) {
-        if (permissionId == null) {
-            logger.info("Role-Permission ID is null, cannot proceed with search.");
-            return RolePermissionMapper.toPermissionResponseDTO(new RolePermission(), ResponseStatus.ROLE_PERMISSION_ID_NOT_FOUND);
-        }
-        return rolePermissionRepo.findById(permissionId);
+    public RolePermissionResponseDTO findByPermissionId(UUID rolePermissionId) {
+        return rolePermissionRepo.findById(rolePermissionId);
     }
 
     /**
@@ -133,7 +129,7 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     public RolePermissionResponseDTO delete(UUID rolePermissionId) {
         if (rolePermissionId.toString() == null) {
             RolePermissionResponseDTO responseDTO = RolePermissionMapper.toPermissionResponseDTO(new RolePermission(), ResponseStatus.ROLE_PERMISSION_ID_NOT_FOUND);
-            activityLoggerService.logActivity(EntityType.ROLE_PERMISSION, responseDTO.getId(), ActionType.DELETED, rolePermissionId);
+            activityLoggerService.logActivity(EntityType.ROLE_PERMISSION, responseDTO.getId(), ActionType.DELETED, SecurityConfig.getCurrentUser().getId());
 
         }
         return rolePermissionRepo.delete(rolePermissionId);

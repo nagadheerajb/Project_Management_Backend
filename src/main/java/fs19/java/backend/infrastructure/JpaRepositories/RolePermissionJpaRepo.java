@@ -25,7 +25,10 @@ public interface RolePermissionJpaRepo extends JpaRepository<RolePermission, UUI
 
     @Query(value = "SELECT * " +
             "FROM role_permission rp " +
-            "WHERE rp.permission_id = :permissionId AND rp.role_id = :roleId ",   nativeQuery = true)
+            "WHERE rp.permission_id = :permissionId AND rp.role_id = :roleId ", nativeQuery = true)
     RolePermission findByPermissionIdAndRoleId(@Param("permissionId") UUID permissionId, @Param("roleId") UUID roleId);
 
+    @Query(value = "SELECT workspace_id " +
+            "FROM workspace_user wu WHERE wu.user_Id = :userId", nativeQuery = true)
+    List<UUID> findLinkWorkspaceIds(@Param("userId") UUID userId);
 }

@@ -2,8 +2,10 @@ package fs19.java.backend.infrastructure;
 
 import fs19.java.backend.application.dto.task.TaskRequestDTO;
 import fs19.java.backend.domain.abstraction.TaskRepository;
+import fs19.java.backend.domain.entity.Project;
 import fs19.java.backend.domain.entity.Task;
 import fs19.java.backend.domain.entity.User;
+import fs19.java.backend.infrastructure.JpaRepositories.ProjectJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.TaskJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
 import fs19.java.backend.presentation.shared.exception.PermissionLevelException;
@@ -21,10 +23,12 @@ public class TaskRepoImpl implements TaskRepository {
 
     private final TaskJpaRepo taskJpaRepo;
     private final UserJpaRepo userJpaRepo;
+    private final ProjectJpaRepo projectJpaRepo;
 
-    public TaskRepoImpl(TaskJpaRepo taskJpaRepo, UserJpaRepo userJpaRepo) {
+    public TaskRepoImpl(TaskJpaRepo taskJpaRepo, UserJpaRepo userJpaRepo, ProjectJpaRepo projectJpaRepo) {
         this.taskJpaRepo = taskJpaRepo;
         this.userJpaRepo = userJpaRepo;
+        this.projectJpaRepo = projectJpaRepo;
     }
 
     @Override
@@ -37,7 +41,7 @@ public class TaskRepoImpl implements TaskRepository {
     }
 
     @Override
-    public Task update(UUID taskId, TaskRequestDTO taskRequestDTO, User assignedUser) {
+    public Task update(UUID taskId, TaskRequestDTO taskRequestDTO, User assignedUser, Project project) {
         Task task = findById(taskId);
         if (task != null) {
             task.setName(taskRequestDTO.getName());
@@ -46,7 +50,7 @@ public class TaskRepoImpl implements TaskRepository {
             task.setDueDate(taskRequestDTO.getDueDate());
             task.setAttachments(taskRequestDTO.getAttachments());
             task.setPriority(taskRequestDTO.getPriority());
-            task.setProjectId(taskRequestDTO.getProjectId());
+            task.setProject(project);
             task.setAssignedUser(assignedUser);
             return taskJpaRepo.save(task);
         } else {
@@ -117,5 +121,10 @@ public class TaskRepoImpl implements TaskRepository {
      */
     public Optional<User> findTaskUserByUserId(UUID userId) {
         return userJpaRepo.findById(userId);
+    }
+
+    public Optional<Project> findProjectById(UUID companyId) {
+        return projectJpaRepo.findById(companyId);
+
     }
 }

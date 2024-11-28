@@ -3,6 +3,7 @@ package fs19.java.backend.application;
 import fs19.java.backend.application.dto.project.ProjectCreateDTO;
 import fs19.java.backend.application.dto.project.ProjectReadDTO;
 import fs19.java.backend.application.dto.project.ProjectUpdateDTO;
+import fs19.java.backend.application.events.GenericEvent;
 import fs19.java.backend.application.mapper.ProjectMapper;
 import fs19.java.backend.application.service.ProjectService;
 import fs19.java.backend.domain.entity.Project;
@@ -18,6 +19,8 @@ import fs19.java.backend.presentation.shared.exception.ProjectValidationExceptio
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -40,24 +43,31 @@ public class ProjectServiceImpl implements ProjectService {
     @Autowired
     private final UserJpaRepo userRepository;
     private final ActivityLoggerService activityLoggerService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProjectServiceImpl(
-        ProjectJpaRepo projectRepository,
-        UserJpaRepo userRepository,
-        WorkspaceJpaRepo workspaceRepository,
-        ActivityLoggerService activityLoggerService) {
+            ProjectJpaRepo projectRepository,
+            UserJpaRepo userRepository,
+            WorkspaceJpaRepo workspaceRepository,
+            ActivityLoggerService activityLoggerService, ApplicationEventPublisher eventPublisher) {
 
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.workspaceRepository = workspaceRepository;
         this.activityLoggerService = activityLoggerService;
+        this.eventPublisher = eventPublisher;
     }
     @Override
     public ProjectReadDTO createProject(ProjectCreateDTO projectDTO) {
         logger.info("Creating project with DTO: {}", projectDTO);
 
-        User createdBy = userRepository.findById(projectDTO.getCreatedByUserId())
+        User createdBy = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (createdBy.getId() == null) {
+             createdBy = userRepository.findById(projectDTO.getCreatedByUserId())
             .orElseThrow(() -> new ProjectValidationException("User not found with ID " + projectDTO.getCreatedByUserId()));
+        }
+
         logger.info("User found for project creation: {}", createdBy);
 
         Workspace workspace = workspaceRepository.findById(projectDTO.getWorkspaceId())
@@ -81,7 +91,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         activityLoggerService.logActivity(EntityType.PROJECT, project.getId(), ActionType.CREATED, createdBy.getId());
         logger.info("Activity logged for project creation");
-
+        eventPublisher.publishEvent(new GenericEvent<>(this, project, EntityType.PROJECT, "Created"));
         return ProjectMapper.toReadDTO(project);
     }
 
@@ -103,7 +113,7 @@ public class ProjectServiceImpl implements ProjectService {
 
             activityLoggerService.logActivity(EntityType.PROJECT, updatedProject.getId(), ActionType.UPDATED, updatedProject.getCreatedByUser().getId());
             logger.info("Activity logged for project update");
-
+            eventPublisher.publishEvent(new GenericEvent<>(this, updatedProject, EntityType.PROJECT, "Updated"));
             return ProjectMapper.toReadDTO(updatedProject);
         }
         else {
@@ -140,7 +150,7 @@ public class ProjectServiceImpl implements ProjectService {
             projectRepository.delete(project.get());
 
             logger.info("Project deleted successfully");
-
+            eventPublisher.publishEvent(new GenericEvent<>(this, project, EntityType.PROJECT, "Deleted"));
             return true;
         }
         return false;

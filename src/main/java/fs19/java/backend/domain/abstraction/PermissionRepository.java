@@ -12,17 +12,11 @@ import java.util.UUID;
 public interface PermissionRepository {
 
     Permission save(Permission permission);
-
     Permission update(UUID permissionId, PermissionRequestDTO permissionRequestDTO);
-
     Permission delete(UUID permissionId);
-
     List<Permission> findAll();
-
     Permission findById(UUID permissionId);
-
     Permission findByName(String name);
-
     boolean existsById(UUID permissionId);
 
 

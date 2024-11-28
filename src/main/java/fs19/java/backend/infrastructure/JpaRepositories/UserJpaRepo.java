@@ -10,10 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface UserJpaRepo extends JpaRepository<User, UUID> {
-
-    @Query(value = "SELECT * " +
-            "FROM users u " +
-            "WHERE u.email = :email ",
-            nativeQuery = true)
+    @Query("SELECT u FROM User u WHERE u.email = :email")
     Optional<User> findByEmail(@Param("email") String email);
 }

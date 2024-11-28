@@ -15,20 +15,12 @@ import java.util.UUID;
 public interface RolePermissionRepository {
 
     RolePermissionResponseDTO save(RolePermissionRequestDTO rolePermissionRequestDTO);
-
     List<RolePermissionResponseDTO> findAll();
-
     RolePermissionResponseDTO delete(UUID rolePermissionId);
-
     RolePermissionResponseDTO update(UUID rolePermissionId, @Valid RolePermissionRequestDTO rolePermissionRequestDTO);
-
     RolePermissionResponseDTO validate(RolePermissionRequestDTO rolePermissionRequestDTO);
-
     RolePermissionResponseDTO findById(UUID id);
-
     List<RolePermissionResponseDTO> findByRoleId(UUID roleId);
-
     List<RolePermissionResponseDTO> findByPermissionId(UUID permissionId);
-
     RolePermission existsById(@NotNull UUID roleId, @NotNull UUID permissionId);
 }

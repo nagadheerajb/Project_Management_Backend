@@ -15,7 +15,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "invitation", indexes = {
-        @Index(name = "idx_invitation_company_id", columnList = "company_id"),
+        @Index(name = "idx_invitation_workspace_id", columnList = "workspace_id"),
         @Index(name = "idx_invitation_role_id", columnList = "role_id"),
         @Index(name = "idx_invitation_user_id", columnList = "user_id")
 })
@@ -33,18 +33,21 @@ public class Invitation {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime expiredAt;
     @NotNull
-    @Column(nullable = false, length = 25)
+    @Column(nullable = false, length = 45)
     private String email;
     @NotNull
+    @Column(nullable = false, length = 3000)
+    private String url;
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User createdBy;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "role_id", nullable = false)
+    @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     private Role role;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @JoinColumn(name = "workspace_id", referencedColumnName = "id", nullable = false)
+    private Workspace workspace;
 }

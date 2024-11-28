@@ -5,18 +5,18 @@ import fs19.java.backend.application.dto.workspace.WorkspaceResponseDTO;
 import fs19.java.backend.application.dto.workspace.WorkspaceUpdateDTO;
 import fs19.java.backend.application.mapper.WorkspaceMapper;
 import fs19.java.backend.application.service.WorkspaceService;
+import fs19.java.backend.config.DataLoader;
 import fs19.java.backend.domain.entity.Company;
 import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.domain.entity.Workspace;
+import fs19.java.backend.domain.entity.WorkspaceUser;
 import fs19.java.backend.domain.entity.enums.ActionType;
 import fs19.java.backend.domain.entity.enums.EntityType;
-import fs19.java.backend.infrastructure.JpaRepositories.CompanyJpaRepo;
-import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
-import fs19.java.backend.infrastructure.JpaRepositories.WorkspaceJpaRepo;
+import fs19.java.backend.infrastructure.JpaRepositories.*;
 import fs19.java.backend.presentation.shared.exception.CompanyNotFoundException;
+import fs19.java.backend.presentation.shared.exception.InvalidWorkspaceException;
 import fs19.java.backend.presentation.shared.exception.UserNotFoundException;
 import fs19.java.backend.presentation.shared.exception.WorkspaceNotFoundException;
-import fs19.java.backend.presentation.shared.exception.InvalidWorkspaceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -40,13 +40,17 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     private final UserJpaRepo userRepository;
     private final CompanyJpaRepo companyRepository;
     private final ActivityLoggerService activityLoggerService;
+    private final WorkspaceUserJpaRepo workspaceUserJpaRepo;
+    private final RoleJpaRepo roleJpaRepo;
 
-    public WorkspaceServiceImpl(WorkspaceJpaRepo workspaceRepository, WorkspaceMapper workspaceMapper, UserJpaRepo userRepository, CompanyJpaRepo companyRepository, ActivityLoggerService activityLoggerService) {
+    public WorkspaceServiceImpl(WorkspaceJpaRepo workspaceRepository, WorkspaceMapper workspaceMapper, UserJpaRepo userRepository, CompanyJpaRepo companyRepository, ActivityLoggerService activityLoggerService, WorkspaceUserJpaRepo workspaceUserJpaRepo, RoleJpaRepo roleJpaRepo) {
         this.workspaceRepository = workspaceRepository;
         this.workspaceMapper = workspaceMapper;
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
         this.activityLoggerService = activityLoggerService;
+        this.workspaceUserJpaRepo = workspaceUserJpaRepo;
+        this.roleJpaRepo = roleJpaRepo;
     }
 
     @Override
@@ -63,8 +67,10 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         Workspace workspace = workspaceMapper.toEntity(workspaceRequestDTO, createdBy, company);
         workspace.setCreatedDate(ZonedDateTime.now());
         Workspace savedWorkspace = workspaceRepository.save(workspace);
+        WorkspaceUser workspaceUser = AssignedAsAdmin(savedWorkspace);
         activityLoggerService.logActivity(EntityType.WORKSPACE, savedWorkspace.getId(), ActionType.CREATED, createdBy.getId());
         logger.info("Workspace created successfully: {}", savedWorkspace);
+        logger.info("WorkspaceUser created successfully: {}", workspaceUser);
         return workspaceMapper.toDTO(savedWorkspace);
     }
 
@@ -145,5 +151,19 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         logger.info("Workspace with ID: {} deleted successfully", id);
         //User createdBy = SecurityUtils.getCurrentUser();
         //activityLoggerService.logActivity(EntityType.COMPANY, id, ActionType.DELETED, createdBy.getId());
+    }
+
+    /**
+     * Person who create the workspace, that user becomes an admin
+     *
+     * @param savedWorkspace
+     * @return
+     */
+    private WorkspaceUser AssignedAsAdmin(Workspace savedWorkspace) {
+        WorkspaceUser workspaceUser = new WorkspaceUser();
+        workspaceUser.setWorkspace(savedWorkspace);
+        workspaceUser.setUser(savedWorkspace.getCreatedBy());
+        workspaceUser.setRole(roleJpaRepo.findByName(DataLoader.ADMIN_USER_NAME));
+       return workspaceUserJpaRepo.save(workspaceUser);
     }
 }

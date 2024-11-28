@@ -29,14 +29,17 @@ public class CompanyServiceImpl implements CompanyService {
     private static final String COMPANY_NOT_FOUND_MESSAGE = "Company with ID %s not found";
     private static final String USER_NOT_FOUND_MESSAGE = "User not found with ID %s";
 
+
     private final CompanyJpaRepo companyRepository;
     private final UserJpaRepo userRepository;
     private final ActivityLoggerService activityLoggerService;
+    private final NotificationSender notificationSender;
 
-    public CompanyServiceImpl(CompanyJpaRepo companyRepository, UserJpaRepo userRepository, ActivityLoggerService activityLoggerService) {
+    public CompanyServiceImpl(CompanyJpaRepo companyRepository, UserJpaRepo userRepository, ActivityLoggerService activityLoggerService, NotificationSender notificationSender) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.activityLoggerService = activityLoggerService;
+        this.notificationSender = notificationSender;
     }
 
     @Override

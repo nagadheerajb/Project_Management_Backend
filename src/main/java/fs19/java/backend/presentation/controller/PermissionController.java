@@ -22,7 +22,7 @@ import java.util.UUID;
 
 @Tag(name = "Permission", description = "Manage Permissions")
 @RestController
-@RequestMapping("app/v1/permissions")
+@RequestMapping("api/v1/permissions")
 public class PermissionController {
 
     @Autowired

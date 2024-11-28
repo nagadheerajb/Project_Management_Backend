@@ -4,6 +4,7 @@ import fs19.java.backend.application.dto.permission.PermissionRequestDTO;
 import fs19.java.backend.application.dto.permission.PermissionResponseDTO;
 import fs19.java.backend.application.mapper.PermissionMapper;
 import fs19.java.backend.application.service.PermissionService;
+import fs19.java.backend.config.SecurityConfig;
 import fs19.java.backend.domain.entity.Permission;
 import fs19.java.backend.domain.entity.enums.ActionType;
 import fs19.java.backend.domain.entity.enums.EntityType;
@@ -25,7 +26,7 @@ import java.util.UUID;
 @Service
 public class PermissionServiceImpl implements PermissionService {
 
-    private static final Logger logger = LogManager.getLogger(ActivityLogController.class);
+    private static final Logger logger = LogManager.getLogger(PermissionServiceImpl.class);
 
     private final PermissionRepoImpl permissionRepo;
     private final UserServiceImpl userService;
@@ -113,7 +114,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (myPermission == null) {
             return PermissionMapper.toPermissionResponseDTO(new Permission(), ResponseStatus.INVALID_INFORMATION_PERMISSION_DETAILS_NOT_FOUND);
         }
-        activityLoggerService.logActivity(EntityType.PERMISSION, myPermission.getId(), ActionType.DELETED, myPermission.getId());
+        activityLoggerService.logActivity(EntityType.PERMISSION, myPermission.getId(), ActionType.DELETED, SecurityConfig.getCurrentUser().getId());
         return PermissionMapper.toPermissionResponseDTO(myPermission, ResponseStatus.SUCCESSFULLY_DELETED);
     }
 

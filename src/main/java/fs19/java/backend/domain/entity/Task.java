@@ -1,6 +1,7 @@
 package fs19.java.backend.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import fs19.java.backend.config.StringListConverter;
 import fs19.java.backend.domain.entity.enums.ValidPriority;
 import fs19.java.backend.domain.entity.enums.ValidTaskStatus;
 import jakarta.persistence.*;
@@ -32,24 +33,34 @@ public class Task {
     @Column(updatable = false, nullable = false)
     private UUID id;
     @NotNull
-    @Column(nullable = false, length = 25)
+    @Column(nullable = false, length = 45)
     private String name;
     @Column(length = 500)
     private String description;
+
     @NotNull
     @Column(nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime createdDate;
+    @Column
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime resolvedDate;
+
+    @Column
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private ZonedDateTime dueDate;
+
+    @Column(name = "attachments")
+    @Convert(converter = StringListConverter.class)
     private List<String> attachments;
+
     @Column(nullable = false)
     @ValidTaskStatus
     private String taskStatus;
-    @Column(nullable = false)
-    private UUID projectId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "project_Id", nullable = false)
+    private Project project;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "createduser_id", nullable = false)

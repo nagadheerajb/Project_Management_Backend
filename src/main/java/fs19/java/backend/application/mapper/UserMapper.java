@@ -6,16 +6,18 @@ import fs19.java.backend.application.dto.user.UserReadDTO;
 import fs19.java.backend.domain.entity.User;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @UtilityClass
 public class UserMapper {
 
-  public static User toEntity(UserCreateDTO dto) {
+  public static User toEntity(UserCreateDTO dto,String password) {
     User user = new User();
     user.setFirstName(dto.getFirstName());
     user.setLastName(dto.getLastName());
     user.setEmail(dto.getEmail());
-    user.setPassword(dto.getPassword());
+    user.setPassword(password);
     user.setPhone(dto.getPhone());
     user.setProfileImage(dto.getProfileImage());
     return user;

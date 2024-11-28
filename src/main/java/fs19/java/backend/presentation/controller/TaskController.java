@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @Tag(name = "Task", description = "Manage Tasks")
-@RequestMapping("app/v1/tasks")
+@RequestMapping("api/v1/tasks")
 public class TaskController {
 
 

@@ -10,18 +10,11 @@ import java.util.UUID;
 public interface RolePermissionService {
 
     RolePermissionResponseDTO create(@Valid RolePermissionRequestDTO rolePermissionRequestDTO);
-
     RolePermissionResponseDTO update(UUID rolePermissionId, @Valid RolePermissionRequestDTO rolePermissionRequestDTO);
-
     RolePermissionResponseDTO delete(UUID rolePermissionId);
-
     List<RolePermissionResponseDTO> findById(UUID permissionId);
-
     RolePermissionResponseDTO findByRoleIdAndPermissionId(UUID roleId, UUID permissionId);
-
     List<RolePermissionResponseDTO> findAll();
-
     RolePermissionResponseDTO findByPermissionId(UUID permissionId);
-
     List<RolePermissionResponseDTO> findByRoleId(UUID roleId);
 }

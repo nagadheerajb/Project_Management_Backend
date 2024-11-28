@@ -15,18 +15,11 @@ import java.util.UUID;
 public interface RoleRepository {
 
     Role save(Role role);
-
     Role update(UUID roleId, RoleRequestDTO role, Company company);
-
     Role delete(UUID roleId);
-
     List<Role> findAll();
-
     Role findByName(String roleName);
-
     Role findById(UUID roleId);
-
     boolean existsById(UUID roleId);
-
     Optional<Company> getCompanyByCompanyId(@NotNull UUID companyId);
 }

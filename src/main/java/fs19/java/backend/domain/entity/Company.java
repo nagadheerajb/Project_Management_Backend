@@ -17,7 +17,7 @@ public class Company {
     @GeneratedValue(generator = "UUID")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 45)
     private String name;
 
     @Column

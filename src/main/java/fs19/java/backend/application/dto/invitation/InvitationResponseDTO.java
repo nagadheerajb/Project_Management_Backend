@@ -25,6 +25,9 @@ public class InvitationResponseDTO {
     @Schema(type = "String", format = "String", description = "invitation sending email")
     @NotNull
     private String email;
+    @NotNull
+    @Schema(type = "string", format = "string", description = "Url defines here")
+    private String url;
     @Schema(type = "uuid", format = "uuid", description = "invitation creating user Id")
     @NotNull(message = "User id cannot be null")
     private UUID created_user;

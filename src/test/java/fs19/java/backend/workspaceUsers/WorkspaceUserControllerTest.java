@@ -28,17 +28,25 @@ import fs19.java.backend.presentation.shared.Utilities.DateAndTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Transactional
+@Commit
 class WorkspaceUserControllerTest {
 
   @Autowired
@@ -63,6 +71,8 @@ class WorkspaceUserControllerTest {
   private Workspace workspace;
   private Role role;
   private Role role2;
+ private static int emailCounter = 1;
+
   private WorkspaceUserRequestDTO workspaceUserRequestDTO;
 
   @BeforeEach
@@ -108,6 +118,8 @@ class WorkspaceUserControllerTest {
         .userId(user.getId())
         .workspaceId(workspace.getId())
         .build();
+
+
   }
 
   private static List<ActivityLog> getActivityLogs(User newUser) {
@@ -123,6 +135,7 @@ class WorkspaceUserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldCreateWorkspaceUser() throws Exception {
     mockMvc.perform(post("/api/v1/workspace-users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -133,6 +146,7 @@ class WorkspaceUserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldGetAllWorkspaceUsers() throws Exception {
     mockMvc.perform(get("/api/v1/workspace-users"))
         .andDo(print())
@@ -141,8 +155,9 @@ class WorkspaceUserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldGetWorkspaceUserById() throws Exception {
-    User user2 = new User(UUID.randomUUID(), "User2", "Pony", "user2.pony@example.com",
+    User user2 = new User(UUID.randomUUID(), "User2", "Pony", "user2"+ emailCounter++ +"@example.com",
         "password", "123456789", ZonedDateTime.now(), "profile.jpg", List.of());
     var activityLogList = getActivityLogs(user2);
     user2.setActivityLogs(activityLogList);
@@ -170,8 +185,9 @@ class WorkspaceUserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldUpdateWorkspaceUser() throws Exception {
-    User user3 = new User(UUID.randomUUID(), "User3", "Pony", "user3.pony@example.com", "password", "123456789", ZonedDateTime.now(), "profile.jpg",
+    User user3 = new User(UUID.randomUUID(), "User3", "lastname", "user3" + emailCounter++ + "@example.com", "password", "123456789", ZonedDateTime.now(), "profile.jpg",
         List.of());
     var activityLogList = getActivityLogs(user3);
     user3.setActivityLogs(activityLogList);
@@ -207,8 +223,9 @@ class WorkspaceUserControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "admin", authorities = {"TEST-USER"})
   void shouldDeleteWorkspaceUser() throws Exception {
-    User user4 = new User(UUID.randomUUID(), "User4", "Tony", "user4.tony@example.com", "password", "123456789", ZonedDateTime.now(), "profile.jpg",
+    User user4 = new User(UUID.randomUUID(), "User4", "Tony", "user42" + emailCounter++ + "@example.com", "password", "123456789", ZonedDateTime.now(), "profile.jpg",
         List.of());
     var activityLogList = getActivityLogs(user4);
     user4.setActivityLogs(activityLogList);

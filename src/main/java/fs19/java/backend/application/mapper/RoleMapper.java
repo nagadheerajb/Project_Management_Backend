@@ -19,8 +19,9 @@ public class RoleMapper {
     /**
      * Convert role into Role response dto
      *
-     * @param role
-     * @return
+     * @param role   Role
+     * @param status ResponseStatus
+     * @return RoleResponseDTO
      */
     public static RoleResponseDTO toRoleResponseDTO(Role role, ResponseStatus status) {
         return new RoleResponseDTO(role.getId(), role.getName(), role.getCreatedDate(), role.getCompany() == null ? null : role.getCompany().getId(), status);
@@ -28,26 +29,22 @@ public class RoleMapper {
 
     /**
      * Convert role list into role response dto list
-     *
-     * @param roles
-     * @param status
-     * @return
+     * @param roles  List<Role> roles
+     * @param status ResponseStatus
+     * @return  seDTO>
      */
     public static List<RoleResponseDTO> toRoleResponseDTOs(List<Role> roles, ResponseStatus status) {
         List<RoleResponseDTO> responseDTOS = new ArrayList<>();
-        roles.forEach(role -> {
-            responseDTOS.add(toRoleResponseDTO(role, status));
-        });
+        roles.forEach(role -> responseDTOS.add(toRoleResponseDTO(role, status)));
         return responseDTOS;
     }
 
 
     /**
      * Convert request object to entity object
-     *
-     * @param roleRequestDTO
-     * @param company
-     * @return
+     * @param roleRequestDTO RoleRequestDTO
+     * @param company        Company
+     * @return Role
      */
     public static Role toRole(@Valid RoleRequestDTO roleRequestDTO, Company company) {
         Role myRole = new Role();
