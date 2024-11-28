@@ -1,5 +1,5 @@
 
-# User Management System
+# Project Management System
 - # Spring Boot Application with PostgreSQL, Hibernate, JPA, and JWT
 
 
