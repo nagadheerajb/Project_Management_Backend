@@ -11,6 +11,8 @@ import fs19.java.backend.presentation.shared.Utilities.DateAndTime;
 import fs19.java.backend.presentation.shared.exception.UserAlreadyFoundException;
 import fs19.java.backend.presentation.shared.exception.UserNotFoundException;
 import fs19.java.backend.presentation.shared.exception.UserValidationException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ import java.util.Optional;
 @Service
 public class AuthServiceImpl {
 
+    private static final Logger logger = LogManager.getLogger(AuthServiceImpl.class);
     private final AuthRepoImpl authRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtValidator jwtValidator;
@@ -63,11 +66,18 @@ public class AuthServiceImpl {
      * @return
      */
     public AuthResponseDTO authenticate(LoginRequestDTO request) {
+        logger.info("Authenticating user with email: {}", request.email());
         Optional<User> user = authRepo.findByEmail(request.email());
         if (user.isEmpty()) {
+            logger.error("Given Email Not exist: User Not Found");
             throw new UserNotFoundException("Given Email Not exist: User Not Found");
         }
+        if (!passwordEncoder.matches(request.password(), user.get().getPassword())) {
+            logger.error("Invalid password. Please try again.");
+            throw new UserValidationException("Invalid password. Please try again.");
+        }
         String accessToken = jwtValidator.generateToken(user.get(), authRepo.findLinkWorkspaceIds(user.get().getId()));
+        logger.info("User authenticated successfully{}", accessToken);
         return UserMapper.toAuthResponseDTO(user.get(), accessToken);
     }
 
@@ -88,6 +98,4 @@ public class AuthServiceImpl {
             throw new UserValidationException("LastName is required");
         }
     }
-
 }
-

@@ -33,10 +33,12 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final fs19.java.backend.security.CustomAuthenticationProvider customAuthenticationProvider;
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(fs19.java.backend.security.CustomAuthenticationProvider customAuthenticationProvider, UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
+        this.customAuthenticationProvider = customAuthenticationProvider;
         this.userDetailsService = userDetailsService;
         this.jwtAuthFilter = jwtAuthFilter;
     }
@@ -73,8 +75,12 @@ public class SecurityConfig {
     @Profile("!test")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         final List<SecurityRole> rolePermissions = getRolePermissionsFromDatabase();
-        http.cors(AbstractHttpConfigurer::disable).csrf(AbstractHttpConfigurer::disable).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(auth -> {
-                    // Public endpoints that can be accessed without authentication
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> {
+                    // Public endpoints
                     auth
                             .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/companies").permitAll()
@@ -82,27 +88,27 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                             .requestMatchers("/api/v1/accept-invitation/redirect").permitAll()
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll();
-                    // Loop through dynamic role-permission mappings from the database
+
+                    // Role-based permissions
                     for (SecurityRole rolePermission : rolePermissions) {
-                        // Example: check GET /api/v1/resource for specific role permissions
                         auth.requestMatchers(rolePermission.getMethod(), rolePermission.getPermission()).hasAuthority(rolePermission.getRole());
                     }
-
-                    // Block all other requests that don't match any of the above rules
-                    auth.anyRequest().denyAll();  // This ensures other requests are blocked
-
-                }).exceptionHandling(exception ->
+                    // Block all other requests
+                    auth.anyRequest().denyAll();
+                })
+                .exceptionHandling(exception ->
                         exception.accessDeniedHandler(accessDeniedHandler())
                                 .authenticationEntryPoint((req, res, authEx) -> {
                                     res.setStatus(HttpServletResponse.SC_FORBIDDEN);
                                     res.getWriter().write("Unauthorized access: " + authEx.getMessage());
                                 })
                 )
-
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).authenticationManager(authenticationManager(http));
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .authenticationManager(authenticationManager(http));
 
         return http.build();
     }
+
 
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
@@ -119,11 +125,18 @@ public class SecurityConfig {
 
 
     @Bean
-    AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+
+        // Add the custom AuthenticationProvider
+        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
+
+        // Add the UserDetailsService with PasswordEncoder
         authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+
         return authenticationManagerBuilder.build();
     }
+
 
     public static String getCurrentUserLogin() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -147,4 +160,19 @@ public class SecurityConfig {
         }
         return new User();
     }
+
+    @Bean
+    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+        org.springframework.web.cors.CorsConfiguration corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000")); // Add frontend domain
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type", "workspaceId"));
+        corsConfiguration.setExposedHeaders(List.of("Authorization")); // Expose headers for frontend
+        corsConfiguration.setAllowCredentials(true); // Allow cookies if needed
+
+        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration); // Apply CORS configuration to all endpoints
+        return source;
+    }
+
 }
