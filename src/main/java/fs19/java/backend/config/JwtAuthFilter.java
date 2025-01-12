@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +26,7 @@ import java.util.UUID;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LogManager.getLogger(JwtAuthFilter.class);
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtValidator jwtValidator;
 
@@ -42,6 +45,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // 0) Possibly skip swagger or other public endpoints
             String requestURI = request.getRequestURI();
             String httpMethod = request.getMethod();
+            //logger.info("Incoming request: [{}] {}", httpMethod, requestURI);
+
+            // Log all request headers for debugging
+//            request.getHeaderNames().asIterator().forEachRemaining(headerName ->
+//                    logger.info("Request Header: {} = {}", headerName, request.getHeader(headerName))
+//            );
+
             if (isPublicEndpoint(requestURI)) {
                 filterChain.doFilter(request, response);
                 return;
@@ -52,6 +62,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String workspaceId = request.getHeader("workspaceId");
 
             if (token == null) {
+                logger.warn("No token found in request headers");
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -61,14 +72,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String signature = getSignature(token);
             if (signature != null) {
                 username = jwtValidator.extractUserEmail(token);
+                logger.info("Extracted username from token: {}", username);
             }
+
             if (username == null) {
+                logger.warn("Unable to extract username from token");
                 filterChain.doFilter(request, response);
                 return;
             }
 
             // 3) If already authenticated => skip
             if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                logger.info("User already authenticated");
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -88,6 +103,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             );
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    logger.info("Authenticated user for endpoint /my-workspaces: {}", username);
+                } else {
+                    logger.warn("Token is invalid for endpoint /my-workspaces: {}", username);
                 }
             } else {
                 if (workspaceId != null) {
@@ -102,13 +120,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                 );
                         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        logger.info("Authenticated user for endpoint: {}", requestURI);
+                    } else {
+                        logger.warn("Token is invalid for endpoint: {}", requestURI);
                     }
+                } else {
+                    logger.warn("No workspaceId found for endpoint: {}", requestURI);
                 }
             }
 
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
+            logger.error("Exception during authentication process: ", e);
             throw new RuntimeException(e);
         }
     }
