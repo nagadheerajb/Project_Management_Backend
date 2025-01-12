@@ -25,6 +25,10 @@ public class CompanyMapper {
         companyDTO.setName(company.getName());
         companyDTO.setCreatedDate(company.getCreatedDate());
         companyDTO.setCreatedBy(company.getCreatedBy().getId());
+        // Add first name and last name of the user who created the company
+        User createdBy = company.getCreatedBy();
+        companyDTO.setFirstName(createdBy.getFirstName());
+        companyDTO.setLastName(createdBy.getLastName());
         return companyDTO;
     }
 

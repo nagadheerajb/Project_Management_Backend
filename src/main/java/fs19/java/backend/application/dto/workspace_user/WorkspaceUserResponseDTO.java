@@ -32,4 +32,10 @@ public class WorkspaceUserResponseDTO {
   @Schema(description = "Name of the workspace")
   private String workspaceName;
 
-}
+  @Schema(type = "uuid", format = "uuid", description = "Unique identifier for company-Id")
+  private UUID companyId;
+
+  @Schema(description = "Name of the company")
+  private String companyName;
+
+ }

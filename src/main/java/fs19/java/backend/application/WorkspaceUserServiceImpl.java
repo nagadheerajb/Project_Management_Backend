@@ -107,12 +107,16 @@ public class WorkspaceUserServiceImpl implements WorkspaceUserService {
   @Override
   public List<WorkspaceUserResponseDTO> getAllWorkspacesByUserId(UUID userId) {
     logger.info("Getting all workspaces for user ID: {}", userId);
-    User user = findUserById(userId);
-    List<WorkspaceUser> workspaceUsers = workspaceUserRepository.findByUser(user);
+
+    // Fetch all workspace users for the given user ID
+    List<WorkspaceUser> workspaceUsers = workspaceUserRepository.findAllByUserIdWithCompany(userId);
+
+    // Map to response DTOs, including company details
     return workspaceUsers.stream()
             .map(WorkspaceUserMapper::toDTO)
             .toList();
   }
+
 
   private void updateWorkspaceUserFields(WorkspaceUserRequestDTO workspaceUsersDTO,
     WorkspaceUser workspaceUser) {
