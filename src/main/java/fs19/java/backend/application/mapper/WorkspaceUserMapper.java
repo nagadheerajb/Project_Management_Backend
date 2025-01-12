@@ -26,6 +26,8 @@ public class WorkspaceUserMapper {
         workspaceUsersDTO.setRoleId(workspaceUser.getRole().getId());
         workspaceUsersDTO.setUserId(workspaceUser.getUser().getId());
         workspaceUsersDTO.setWorkspaceId(workspaceUser.getWorkspace().getId());
+        workspaceUsersDTO.setWorkspaceName(workspaceUser.getWorkspace().getName()); // Add workspace name
         return workspaceUsersDTO;
     }
+
 }

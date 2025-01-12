@@ -29,4 +29,7 @@ public class WorkspaceUserResponseDTO {
   @NotNull
   private UUID userId;
 
+  @Schema(description = "Name of the workspace")
+  private String workspaceName;
+
 }

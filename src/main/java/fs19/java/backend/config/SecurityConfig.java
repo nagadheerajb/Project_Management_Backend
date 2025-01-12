@@ -76,24 +76,31 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         final List<SecurityRole> rolePermissions = getRolePermissionsFromDatabase();
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    // Public endpoints
+                    // 1. Public endpoints
                     auth
                             .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/companies").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/workspaces").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                             .requestMatchers("/api/v1/accept-invitation/redirect").permitAll()
-                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll();
+                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
+                            .permitAll();
 
-                    // Role-based permissions
+                    // 2. Make sure /api/v1/workspace-users/my-workspaces is authenticated (no roles needed)
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/workspace-users/my-workspaces")
+                            .authenticated();
+
+                    // 3. Role-based permissions from DB
                     for (SecurityRole rolePermission : rolePermissions) {
-                        auth.requestMatchers(rolePermission.getMethod(), rolePermission.getPermission()).hasAuthority(rolePermission.getRole());
+                        auth.requestMatchers(rolePermission.getMethod(), rolePermission.getPermission())
+                                .hasAuthority(rolePermission.getRole());
                     }
-                    // Block all other requests
+
+                    // 4. Block everything else
                     auth.anyRequest().denyAll();
                 })
                 .exceptionHandling(exception ->
@@ -108,6 +115,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
 
     @Bean

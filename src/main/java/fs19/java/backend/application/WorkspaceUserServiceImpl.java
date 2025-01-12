@@ -104,6 +104,16 @@ public class WorkspaceUserServiceImpl implements WorkspaceUserService {
     workspaceUserRepository.deleteById(id);
   }
 
+  @Override
+  public List<WorkspaceUserResponseDTO> getAllWorkspacesByUserId(UUID userId) {
+    logger.info("Getting all workspaces for user ID: {}", userId);
+    User user = findUserById(userId);
+    List<WorkspaceUser> workspaceUsers = workspaceUserRepository.findByUser(user);
+    return workspaceUsers.stream()
+            .map(WorkspaceUserMapper::toDTO)
+            .toList();
+  }
+
   private void updateWorkspaceUserFields(WorkspaceUserRequestDTO workspaceUsersDTO,
     WorkspaceUser workspaceUser) {
     logger.info("Updating workspace user fields with DTO: {}", workspaceUsersDTO);

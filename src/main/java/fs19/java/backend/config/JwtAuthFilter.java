@@ -33,49 +33,86 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain filterChain)
             throws ServletException, IOException {
+
         try {
-            //allow swagger
+            // 0) Possibly skip swagger or other public endpoints
             String requestURI = request.getRequestURI();
-            if (requestURI.startsWith("/swagger-ui/") ||
-                    requestURI.startsWith("/v3/api-docs") ||
-                    requestURI.startsWith("/swagger-resources") ||
-                    requestURI.startsWith("/webjars/")) {
-                filterChain.doFilter(request, response);
-                return;
-            } else if (requestURI.startsWith("/api/v1/invitation/")) {
+            String httpMethod = request.getMethod();
+            if (isPublicEndpoint(requestURI)) {
                 filterChain.doFilter(request, response);
                 return;
             }
+
+            // 1) Get token + workspaceId from headers
             String token = request.getHeader("Authorization");
             String workspaceId = request.getHeader("workspaceId");
-            String username = null;
-            if (token != null) {
-                String signature = getSignature(token);
-                if (signature != null) {
-                    username = jwtValidator.extractUserEmail(token);
-                }
-            }
+
             if (token == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            if ((username != null && workspaceId != null) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUserNameAndWorkspaceId(username, UUID.fromString(workspaceId));
-                handleUserInfo(request, token, userDetails, workspaceId, username);
-            } else if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                handleUserInfo(request, token, userDetails, workspaceId, username);
+
+            // 2) Extract username from token
+            String username = null;
+            String signature = getSignature(token);
+            if (signature != null) {
+                username = jwtValidator.extractUserEmail(token);
             }
+            if (username == null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 3) If already authenticated => skip
+            if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 4) Distinguish between /my-workspaces GET and all other endpoints
+            boolean isMyWorkspacesEndpoint = ("/api/v1/workspace-users/my-workspaces".equals(requestURI)
+                    && "GET".equalsIgnoreCase(httpMethod));
+
+            if (isMyWorkspacesEndpoint) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (jwtValidator.isTokenValidForNoWorkspace(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    userDetailsService.findUserByUserName(username),
+                                    userDetails.getAuthorities()
+                            );
+                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
+            } else {
+                if (workspaceId != null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUserNameAndWorkspaceId(
+                            username, UUID.fromString(workspaceId));
+                    if (jwtValidator.isTokenValid(token, userDetails, workspaceId)) {
+                        UsernamePasswordAuthenticationToken authenticationToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        userDetailsService.findUserByUserName(username),
+                                        userDetails.getAuthorities()
+                                );
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    }
+                }
+            }
+
             filterChain.doFilter(request, response);
-        } catch (AccessDeniedException e) {
-            response.getWriter().write(e.getMessage());
-            throw new AuthenticationNotFoundException(e.getMessage());
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
 
     private void handleUserInfo(HttpServletRequest request, String token, UserDetails userDetails, String workspaceId, String username) {
         if (jwtValidator.isTokenValid(token, userDetails, workspaceId)) {
@@ -96,4 +133,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String[] jwtParts = jwt.split("\\.");
         return jwtParts[1];
     }
+
+    private boolean isPublicEndpoint(String requestURI) {
+        return requestURI.startsWith("/swagger-ui/") ||
+                requestURI.startsWith("/v3/api-docs") ||
+                requestURI.startsWith("/swagger-resources") ||
+                requestURI.startsWith("/webjars/") ||
+                requestURI.startsWith("/api/v1/invitation/");
+    }
+
 }

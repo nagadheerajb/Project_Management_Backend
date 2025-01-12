@@ -93,4 +93,16 @@ public class JwtValidator {
         byte[] keyBytes = Decoders.BASE64.decode(JWT_SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    public boolean isTokenValidForNoWorkspace(String token, UserDetails userDetails) {
+        String userEmail = extractUserEmail(token);
+        final Date tokenExpirationDate = extractClaim(token, Claims::getExpiration);
+
+        boolean usernameMatches = Objects.equals(userEmail, userDetails.getUsername());
+        boolean tokenIsExpired = tokenExpirationDate.before(DateAndTime.getCurrentDate());
+
+        // We skip the workspace logic here
+        return usernameMatches && !tokenIsExpired;
+    }
+
 }
