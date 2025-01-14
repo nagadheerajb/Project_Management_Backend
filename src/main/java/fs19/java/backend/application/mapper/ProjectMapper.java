@@ -26,8 +26,9 @@ public class ProjectMapper {
     Project project = new Project();
     project.setName(dto.getName());
     project.setDescription(dto.getDescription());
-    project.setStartDate(dto.getStartDate());
-    project.setEndDate(dto.getEndDate());
+    // startDate and endDate are handled in the service layer
+    // project.setStartDate(dto.getStartDate());
+    // project.setEndDate(dto.getEndDate());
     project.setStatus(dto.getStatus());
     return project;
   }

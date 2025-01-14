@@ -11,6 +11,8 @@ import fs19.java.backend.infrastructure.JpaRepositories.CompanyJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.WorkspaceJpaRepo;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
+
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,27 +98,29 @@ class ProjectControllerTest {
   @Order(1)
   @DisplayName("Test Create Project")
   void testCreateProject() throws Exception {
+    // Use LocalDate for startDate and endDate
     ProjectCreateDTO request = ProjectCreateDTO.builder()
-        .name("Project 1")
-        .description("Description")
-        .startDate(ZonedDateTime.now().plusDays(1))
-        .endDate(ZonedDateTime.parse("2025-01-16T12:34:56Z"))
-        .createdByUserId(user.getId())
-        .workspaceId(workspace.getId())
-        .status(false)
-        .build();
+            .name("Project 1")
+            .description("Description")
+            .startDate(LocalDate.now().plusDays(1)) // Use LocalDate
+            .endDate(LocalDate.of(2025, 2, 16))    // Use LocalDate
+            .createdByUserId(user.getId())
+            .workspaceId(workspace.getId())
+            .status(false)
+            .build();
 
     String responseContent = mockMvc.perform(post(BASE_URL)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.data.name").value("Project 1"))
-        .andReturn()
-        .getResponse()
-        .getContentAsString();
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.data.name").value("Project 1"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
 
     saveIdForExecuteTest(responseContent);
   }
+
 
   @Test
   @Order(2)
@@ -135,9 +139,9 @@ class ProjectControllerTest {
   void testUpdateProject() throws Exception {
     ProjectUpdateDTO updateRequest = ProjectUpdateDTO.builder()
         .description("New Description")
-        .startDate(ZonedDateTime.now().plusDays(1))
-        .endDate(ZonedDateTime.parse("2025-01-16T12:34:56Z"))
-        .status(true)
+            .startDate(LocalDate.now().plusDays(1)) // Use LocalDate
+            .endDate(LocalDate.of(2025, 2, 16))
+        //.status(true)
         .build();
 
     mockMvc.perform(put(BASE_URL + "/" + testProjectId)

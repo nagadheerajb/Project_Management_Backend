@@ -23,10 +23,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectServiceImpl implements ProjectService {
@@ -61,23 +63,50 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectReadDTO createProject(ProjectCreateDTO projectDTO) {
         logger.info("Creating project with DTO: {}", projectDTO);
 
-        User createdBy = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User createdBy;
+
+        if (principal instanceof org.springframework.security.core.userdetails.User) {
+            String email = ((org.springframework.security.core.userdetails.User) principal).getUsername();
+            createdBy = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ProjectValidationException("User not found with email " + email));
+        } else if (principal instanceof User) {
+            createdBy = (User) principal;
+        } else {
+            throw new IllegalStateException("Unexpected principal type: " + principal.getClass().getName());
+        }
 
         if (createdBy.getId() == null) {
-             createdBy = userRepository.findById(projectDTO.getCreatedByUserId())
-            .orElseThrow(() -> new ProjectValidationException("User not found with ID " + projectDTO.getCreatedByUserId()));
+            createdBy = userRepository.findById(projectDTO.getCreatedByUserId())
+                    .orElseThrow(() -> new ProjectValidationException("User not found with ID " + projectDTO.getCreatedByUserId()));
         }
 
         logger.info("User found for project creation: {}", createdBy);
 
         Workspace workspace = workspaceRepository.findById(projectDTO.getWorkspaceId())
-            .orElseThrow(() -> new ProjectValidationException(
-                "Workspace not found with ID " + projectDTO.getWorkspaceId()));
+                .orElseThrow(() -> new ProjectValidationException(
+                        "Workspace not found with ID " + projectDTO.getWorkspaceId()));
         logger.info("Workspace found for project creation: {}", workspace);
 
+        // Ensure startDate and endDate are not null
+        if (projectDTO.getStartDate() == null) {
+            throw new ProjectValidationException("Start date cannot be null");
+        }
+
+        if (projectDTO.getEndDate() == null) {
+            throw new ProjectValidationException("End date cannot be null");
+        }
+
+        // Convert LocalDate to ZonedDateTime
+        ZonedDateTime startDateTime = projectDTO.getStartDate().atStartOfDay(ZoneId.systemDefault());
+        ZonedDateTime endDateTime = projectDTO.getEndDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault());
+
+        // Map DTO to entity
         Project project = ProjectMapper.toEntity(projectDTO);
 
         project.setCreatedDate(ZonedDateTime.now());
+        project.setStartDate(startDateTime);
+        project.setEndDate(endDateTime);
         project.setCreatedByUser(createdBy);
         project.setWorkspace(workspace);
 
@@ -95,6 +124,7 @@ public class ProjectServiceImpl implements ProjectService {
         return ProjectMapper.toReadDTO(project);
     }
 
+
     @Override
     public ProjectReadDTO updateProject(UUID projectId, ProjectUpdateDTO projectDTO) {
         logger.info("Updating project with ID: {} and DTO: {}", projectId, projectDTO);
@@ -104,9 +134,12 @@ public class ProjectServiceImpl implements ProjectService {
             logger.info("Existing project found: {}", existingProject);
             Project updatedProject = existingProject.get();
             updatedProject.setDescription(projectDTO.getDescription());
-            updatedProject.setStartDate(projectDTO.getStartDate());
-            updatedProject.setEndDate(projectDTO.getEndDate());
-            updatedProject.setStatus(projectDTO.getStatus());
+            // Convert LocalDate to ZonedDateTime
+            ZonedDateTime startDateTime = projectDTO.getStartDate().atStartOfDay(ZoneId.systemDefault());
+            ZonedDateTime endDateTime = projectDTO.getEndDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault());
+            updatedProject.setStartDate(startDateTime);
+            updatedProject.setEndDate(endDateTime);
+            //updatedProject.setStatus(projectDTO.getStatus());
 
             updatedProject = projectRepository.save(updatedProject);
             logger.info("Project updated and saved: {}", updatedProject);
@@ -154,5 +187,17 @@ public class ProjectServiceImpl implements ProjectService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public List<ProjectReadDTO> findProjectsByWorkspaceId(UUID workspaceId) {
+        logger.info("Retrieving projects for workspace ID: {}", workspaceId);
+
+        List<Project> projects = projectRepository.findByWorkspaceId(workspaceId);
+        logger.info("Projects retrieved: {}", projects);
+
+        return projects.stream()
+                .map(ProjectMapper::toReadDTO)
+                .collect(Collectors.toList());
     }
 }

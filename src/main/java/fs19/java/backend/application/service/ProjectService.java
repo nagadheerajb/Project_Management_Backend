@@ -13,4 +13,6 @@ public interface ProjectService {
     Boolean deleteProject(UUID projectId);
     ProjectReadDTO findProjectById(UUID projectId);
     List<ProjectReadDTO> findAllProjects();
+    List<ProjectReadDTO> findProjectsByWorkspaceId(UUID workspaceId);
+
 }

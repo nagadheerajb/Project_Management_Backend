@@ -1,4 +1,4 @@
-package fs19.java.backend.security;
+package fs19.java.backend.config;
 
 import fs19.java.backend.application.AuthServiceImpl;
 import fs19.java.backend.application.dto.auth.LoginRequestDTO;

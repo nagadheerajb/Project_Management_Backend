@@ -91,8 +91,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // 4) Distinguish between /my-workspaces GET and all other endpoints
             boolean isMyWorkspacesEndpoint = ("/api/v1/workspace-users/my-workspaces".equals(requestURI)
                     && "GET".equalsIgnoreCase(httpMethod));
+            boolean isCurrentUserEndpoint = ("/api/v1/users/me".equals(requestURI)
+                    && "GET".equalsIgnoreCase(httpMethod));
 
-            if (isMyWorkspacesEndpoint) {
+            if (isMyWorkspacesEndpoint || isCurrentUserEndpoint) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 if (jwtValidator.isTokenValidForNoWorkspace(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
@@ -103,9 +105,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             );
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    logger.info("Authenticated user for endpoint /my-workspaces: {}", username);
+                    logger.info("Authenticated user for endpoint: {} {}", username, requestURI);
                 } else {
-                    logger.warn("Token is invalid for endpoint /my-workspaces: {}", username);
+                    logger.warn("Token is invalid for endpoint {} {}", username, requestURI);
                 }
             } else {
                 if (workspaceId != null) {

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -33,11 +34,11 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final fs19.java.backend.security.CustomAuthenticationProvider customAuthenticationProvider;
+    private final fs19.java.backend.config.CustomAuthenticationProvider customAuthenticationProvider;
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfig(fs19.java.backend.security.CustomAuthenticationProvider customAuthenticationProvider, UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(fs19.java.backend.config.CustomAuthenticationProvider customAuthenticationProvider, UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
         this.customAuthenticationProvider = customAuthenticationProvider;
         this.userDetailsService = userDetailsService;
         this.jwtAuthFilter = jwtAuthFilter;
@@ -90,8 +91,11 @@ public class SecurityConfig {
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
                             .permitAll();
 
-                    // 2. Make sure /api/v1/workspace-users/my-workspaces is authenticated (no roles needed)
+                    // 2. Make sure /api/v1/workspace-users/my-workspaces is authenticated (no roles needed) /api/v1/users/me
                     auth.requestMatchers(HttpMethod.GET, "/api/v1/workspace-users/my-workspaces")
+                            .authenticated();
+
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/users/me")
                             .authenticated();
 
                     // 3. Role-based permissions from DB
@@ -136,11 +140,15 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
 
-        // Add the custom AuthenticationProvider
-        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
+        // Manually configure DaoAuthenticationProvider
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
 
-        // Add the UserDetailsService with PasswordEncoder
-        authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        authenticationManagerBuilder.authenticationProvider(authProvider);
+
+        // Optionally, add your custom AuthenticationProvider
+        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
 
         return authenticationManagerBuilder.build();
     }
