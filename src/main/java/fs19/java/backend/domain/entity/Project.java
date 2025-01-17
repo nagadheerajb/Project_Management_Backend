@@ -1,17 +1,10 @@
 package fs19.java.backend.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -56,5 +49,8 @@ public class Project {
 
   @Column(nullable = false)
   private Boolean status;
+
+  @OneToMany(mappedBy = "projectId", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Notification> notifications;
 }
 

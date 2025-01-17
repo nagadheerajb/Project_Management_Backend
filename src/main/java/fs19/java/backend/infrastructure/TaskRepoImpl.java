@@ -14,6 +14,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Repository;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,8 +47,15 @@ public class TaskRepoImpl implements TaskRepository {
         if (task != null) {
             task.setName(taskRequestDTO.getName());
             task.setDescription(taskRequestDTO.getDescription());
-            task.setResolvedDate(taskRequestDTO.getResolvedDate());
-            task.setDueDate(taskRequestDTO.getDueDate());
+
+            // Convert LocalDate to ZonedDateTime
+            if (taskRequestDTO.getResolvedDate() != null) {
+                task.setResolvedDate(taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault()));
+            }
+            if (taskRequestDTO.getDueDate() != null) {
+                task.setDueDate(taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault()));
+            }
+
             task.setAttachments(taskRequestDTO.getAttachments());
             task.setPriority(taskRequestDTO.getPriority());
             task.setProject(project);
@@ -57,6 +65,7 @@ public class TaskRepoImpl implements TaskRepository {
             throw new PermissionLevelException(" DB is empty: " + TaskLevelException.TASK_UPDATE);
         }
     }
+
 
     @Override
     public Task delete(UUID taskId) {
@@ -127,4 +136,9 @@ public class TaskRepoImpl implements TaskRepository {
         return projectJpaRepo.findById(companyId);
 
     }
+    @Override
+    public List<Task> findTasksByProjectId(UUID projectId) {
+        return taskJpaRepo.findByProjectId(projectId);
+    }
+
 }

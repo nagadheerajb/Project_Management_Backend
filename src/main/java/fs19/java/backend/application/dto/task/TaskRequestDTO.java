@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -27,11 +28,11 @@ public class TaskRequestDTO {
     private String description;
     @Schema(type = "date", format = "date", description = "Task created date define here")
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private ZonedDateTime createdDate;
+    private LocalDate createdDate;
     @Schema(type = "date", format = "date", description = "Task resolved date define here")
-    private ZonedDateTime resolvedDate;
+    private LocalDate resolvedDate;
     @Schema(type = "date", format = "date", description = "Task due date define here")
-    private ZonedDateTime dueDate;
+    private LocalDate dueDate;
     @Schema(type = "Attachment", format = "Object", description = "Task attachments can add here")
     private List<String> attachments;
     @Schema(type = "Enum", format = "Enum", description = "TaskStatus define here")

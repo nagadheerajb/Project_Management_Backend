@@ -8,6 +8,7 @@ import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.presentation.shared.Utilities.DateAndTime;
 import fs19.java.backend.presentation.shared.status.ResponseStatus;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -54,9 +55,12 @@ public class TaskMapper {
      */
     public static Task toTask(TaskRequestDTO taskRequestDTO, User createUser, User assignedUser, Project project) {
         return new Task(UUID.randomUUID(), taskRequestDTO.getName(), taskRequestDTO.getDescription(),
-                DateAndTime.getDateAndTime(), taskRequestDTO.getResolvedDate(),
-                taskRequestDTO.getDueDate(), taskRequestDTO.getAttachments(),
+                DateAndTime.getDateAndTime(),
+                taskRequestDTO.getResolvedDate() != null ? taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault()) : null,
+                taskRequestDTO.getDueDate() != null ? taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault()) : null,
+                taskRequestDTO.getAttachments(),
                 taskRequestDTO.getTaskStatus(), project,
                 createUser, assignedUser, taskRequestDTO.getPriority());
     }
+
 }

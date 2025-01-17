@@ -8,6 +8,8 @@ import fs19.java.backend.presentation.shared.response.ResponseHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +23,7 @@ import java.util.UUID;
 @RequestMapping("api/v1/tasks")
 public class TaskController {
 
-
+    private static final Logger logger = LogManager.getLogger(TaskController.class);
     @Autowired
     private TaskServiceImpl taskService;
 
@@ -108,6 +110,15 @@ public class TaskController {
     @GetMapping("findByCreated/{createdUserId}")
     public ResponseEntity<GlobalResponse<List<TaskResponseDTO>>> getTasksByCreatedUserId(@PathVariable UUID createdUserId) {
         return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), taskService.getByCreatedUserId(createdUserId)), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get tasks by project ID", description = "Retrieves the tasks by project ID.")
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<GlobalResponse<List<TaskResponseDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
+        logger.info("Received request to get tasks for project ID: {}", projectId);
+        List<TaskResponseDTO> tasks = taskService.findTasksByProjectId(projectId);
+        logger.info("Tasks retrieved successfully for project ID: {}", projectId);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), tasks), HttpStatus.OK);
     }
 
 

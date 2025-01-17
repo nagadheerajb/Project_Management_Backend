@@ -21,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
@@ -65,7 +66,9 @@ class TaskControllerTest {
         TaskRequestDTO request = new TaskRequestDTO();
         request.setName("Test Task");
         request.setDescription("Task created for testing.");
-        request.setCreatedDate(DateAndTime.getDateAndTime());
+        request.setCreatedDate(LocalDate.now()); // Set LocalDate for createdDate
+        request.setResolvedDate(LocalDate.now().plusDays(1)); // Set LocalDate for resolvedDate
+        request.setDueDate(LocalDate.now().plusDays(2)); // Set LocalDate for dueDate
         request.setTaskStatus("IN_DEVELOPMENT");
         request.setPriority("HIGH_PRIORITY");
         request.setProjectId(projectJpaRepo.findAll().getFirst().getId());
@@ -83,6 +86,7 @@ class TaskControllerTest {
 
         saveIdForExecuteTest(responseContent);
     }
+
 
     @Test
     @Order(2)
@@ -167,6 +171,18 @@ class TaskControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @Order(9)
+    @WithMockUser(username = "admin", authorities = {"TEST-USER"})
+    @DisplayName("Test Get Tasks by Project ID")
+    void testGetTasksByProjectId() throws Exception {
+        UUID projectId = UUID.randomUUID();
+
+        mockMvc.perform(get(BASE_URL + "/project/" + projectId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
     /**
      * Saves the ID from the response for subsequent tests.
      *
@@ -182,4 +198,6 @@ class TaskControllerTest {
             testTaskId = UUID.fromString((String) id);
         }
     }
+
+
 }
