@@ -10,6 +10,8 @@ import fs19.java.backend.infrastructure.JpaRepositories.TaskJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
 import fs19.java.backend.presentation.shared.exception.PermissionLevelException;
 import fs19.java.backend.presentation.shared.exception.TaskLevelException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Repository;
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 @Repository
 public class TaskRepoImpl implements TaskRepository {
+
+    private static final Logger logger = LogManager.getLogger(TaskRepoImpl.class);
 
     private final TaskJpaRepo taskJpaRepo;
     private final UserJpaRepo userJpaRepo;
@@ -60,11 +64,23 @@ public class TaskRepoImpl implements TaskRepository {
             task.setPriority(taskRequestDTO.getPriority());
             task.setProject(project);
             task.setAssignedUser(assignedUser);
+
+            // Validate and set taskStatus
+            if (taskRequestDTO.getTaskStatus() != null) {
+                task.setTaskStatus(taskRequestDTO.getTaskStatus());
+            } else {
+                throw new IllegalArgumentException("Task status cannot be null during an update.");
+            }
+
+            // Log the final state of the task before saving
+            logger.debug("Final Task before saving: {}", task);
+
             return taskJpaRepo.save(task);
         } else {
-            throw new PermissionLevelException(" DB is empty: " + TaskLevelException.TASK_UPDATE);
+            throw new PermissionLevelException("Task not found: " + TaskLevelException.TASK_UPDATE);
         }
     }
+
 
 
     @Override

@@ -54,13 +54,29 @@ public class TaskMapper {
      * @return Task
      */
     public static Task toTask(TaskRequestDTO taskRequestDTO, User createUser, User assignedUser, Project project) {
-        return new Task(UUID.randomUUID(), taskRequestDTO.getName(), taskRequestDTO.getDescription(),
+        if (taskRequestDTO.getTaskStatus() == null) {
+            throw new IllegalArgumentException("Task status cannot be null when creating a new task.");
+        }
+
+        return new Task(
+                UUID.randomUUID(),
+                taskRequestDTO.getName(),
+                taskRequestDTO.getDescription(),
                 DateAndTime.getDateAndTime(),
-                taskRequestDTO.getResolvedDate() != null ? taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault()) : null,
-                taskRequestDTO.getDueDate() != null ? taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault()) : null,
+                taskRequestDTO.getResolvedDate() != null
+                        ? taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault())
+                        : null,
+                taskRequestDTO.getDueDate() != null
+                        ? taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+                        : null,
                 taskRequestDTO.getAttachments(),
-                taskRequestDTO.getTaskStatus(), project,
-                createUser, assignedUser, taskRequestDTO.getPriority());
+                taskRequestDTO.getTaskStatus(),
+                project,
+                createUser,
+                assignedUser,
+                taskRequestDTO.getPriority()
+        );
     }
+
 
 }

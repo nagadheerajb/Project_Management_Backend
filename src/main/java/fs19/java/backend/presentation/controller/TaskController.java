@@ -7,6 +7,7 @@ import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import fs19.java.backend.presentation.shared.response.ResponseHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,7 +50,15 @@ public class TaskController {
      */
     @Operation(summary = "Update a task", description = "Updates the details of an existing task.")
     @PutMapping("/{taskId}")
-    public ResponseEntity<GlobalResponse<TaskResponseDTO>> updateTask(@PathVariable UUID taskId, @RequestBody @Valid TaskRequestDTO taskRequestDTO) {
+    public ResponseEntity<GlobalResponse<TaskResponseDTO>> updateTask(@PathVariable UUID taskId, @RequestBody @Valid TaskRequestDTO taskRequestDTO, @RequestHeader HttpHeaders headers, HttpServletRequest request) throws IOException {
+
+        headers.forEach((key, value) -> logger.info("Header in TaskController '{}' = {}", key, value));
+
+        // Log the request body
+        ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(request);
+        String requestBody = new String(requestWrapper.getContentAsByteArray(), request.getCharacterEncoding());
+        logger.info("Request Body: {}", requestBody);
+
         TaskResponseDTO theTaskResponse = taskService.update(taskId, taskRequestDTO);
         HttpStatus responseCode = ResponseHandler.getResponseCode(HttpStatus.OK, theTaskResponse.getStatus());
         return new ResponseEntity<>(new GlobalResponse<>(responseCode.value(), theTaskResponse, ResponseHandler.convertResponseStatusToError(theTaskResponse.getStatus())), responseCode);
