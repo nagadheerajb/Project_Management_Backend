@@ -85,6 +85,16 @@ public class ProjectController {
         HttpStatus.NO_CONTENT);
   }
 
+  @Operation(summary = "Get projects by workspace ID", description = "Retrieves the details of projects by workspace ID.")
+  @GetMapping("/workspace/{workspaceId}")
+  public ResponseEntity<GlobalResponse<List<ProjectReadDTO>>> getProjectsByWorkspaceId(@PathVariable UUID workspaceId) {
+    logger.info("Received request to get projects for workspace ID: {}", workspaceId);
+    List<ProjectReadDTO> projects = projectService.findProjectsByWorkspaceId(workspaceId);
+    logger.info("Projects retrieved successfully for workspace ID: {}", workspaceId);
+    return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), projects), HttpStatus.OK);
+  }
+
+
   private void validateProjectRequestDTO(ProjectCreateDTO projectDTO) {
     if (projectDTO.getName() == null || projectDTO.getName().isEmpty()) {
       throw new ProjectValidationException("Project name is required");

@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,7 +40,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponseDTO create(TaskRequestDTO taskRequestDTO) {
-        if (taskRequestDTO.getName().isEmpty()) { // expected valid name only and that validation is enough
+        if (taskRequestDTO.getName().isEmpty()) {
             logger.info("Task Name is null, cannot proceed with Task creation. {}", taskRequestDTO);
             return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_NAME_NOT_FOUND);
         }
@@ -47,7 +48,7 @@ public class TaskServiceImpl implements TaskService {
         if (createdUserById.isPresent()) {
             User assignedUser = null;
             if (taskRequestDTO.getAssignedUserId() != null) {
-                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getCreatedUserId());
+                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getAssignedUserId());
                 if (assignedUserById.isEmpty()) {
                     logger.info("Assigned-User information not found {}", taskRequestDTO);
                     return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_LEVEL_ASSIGNED_USER_NOT_FOUND);
@@ -57,6 +58,15 @@ public class TaskServiceImpl implements TaskService {
             Optional<Project> projectById = taskRepo.findProjectById(taskRequestDTO.getProjectId());
             if (projectById.isPresent()) {
                 Task task = TaskMapper.toTask(taskRequestDTO, createdUserById.get(), assignedUser, projectById.get());
+
+                // Convert LocalDate to ZonedDateTime
+                if (taskRequestDTO.getResolvedDate() != null) {
+                    task.setResolvedDate(taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault()));
+                }
+                if (taskRequestDTO.getDueDate() != null) {
+                    task.setDueDate(taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault()));
+                }
+
                 Task saveTask = taskRepo.save(task);
                 activityLoggerService.logActivity(EntityType.TASK, saveTask.getId(), ActionType.CREATED, saveTask.getCreatedUser().getId());
                 eventPublisher.publishEvent(new GenericEvent<>(this, saveTask, EntityType.TASK, "Created"));
@@ -71,13 +81,14 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
+
     @Override
     public TaskResponseDTO update(UUID taskId, TaskRequestDTO taskRequestDTO) {
         if (taskId == null) {
             logger.info("Task Id is null, cannot proceed with Task update. {}", taskRequestDTO);
             return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_ID_NOT_FOUND);
         }
-        if (taskRequestDTO.getName().isEmpty()) { // expected valid name only and that validation is enough
+        if (taskRequestDTO.getName().isEmpty()) {
             logger.info("Task Name from DTO is null, cannot proceed with Task creation. {}", taskRequestDTO);
             return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_NAME_NOT_FOUND);
         }
@@ -85,7 +96,7 @@ public class TaskServiceImpl implements TaskService {
         if (createdUserById.isPresent()) {
             User assignedUser = null;
             if (taskRequestDTO.getAssignedUserId() != null) {
-                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getCreatedUserId());
+                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getAssignedUserId());
                 if (assignedUserById.isEmpty()) {
                     logger.info("Assigned User-Not Found  {}", taskRequestDTO);
                     return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_LEVEL_ASSIGNED_USER_NOT_FOUND);
@@ -95,6 +106,15 @@ public class TaskServiceImpl implements TaskService {
             Optional<Project> projectById = taskRepo.findProjectById(taskRequestDTO.getProjectId());
             if (projectById.isPresent()) {
                 Task task = taskRepo.update(taskId, taskRequestDTO, assignedUser, projectById.get());
+
+                // Convert LocalDate to ZonedDateTime
+                if (taskRequestDTO.getResolvedDate() != null) {
+                    task.setResolvedDate(taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault()));
+                }
+                if (taskRequestDTO.getDueDate() != null) {
+                    task.setDueDate(taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault()));
+                }
+
                 activityLoggerService.logActivity(EntityType.TASK, task.getId(), ActionType.UPDATED, task.getCreatedUser().getId());
                 eventPublisher.publishEvent(new GenericEvent<>(this, task, EntityType.TASK, "Updated"));
                 return TaskMapper.toTaskResponseDTO(task, ResponseStatus.SUCCESSFULLY_UPDATED);
@@ -102,7 +122,6 @@ public class TaskServiceImpl implements TaskService {
                 logger.info("Project-Not Found {}", taskRequestDTO);
                 return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.PROJECT_ID_NOT_FOUND);
             }
-
         } else {
             logger.info("Created User-Not Found  {}", taskRequestDTO);
             return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_LEVEL_CREATED_USER_NOT_FOUND);
@@ -151,4 +170,11 @@ public class TaskServiceImpl implements TaskService {
     public List<TaskResponseDTO> getByCreatedUserId(UUID createdUserId) {
         return TaskMapper.toTaskResponseDTOs(taskRepo.findByCreatedUserId(createdUserId), ResponseStatus.SUCCESSFULLY_FOUND);
     }
+
+    @Override
+    public List<TaskResponseDTO> findTasksByProjectId(UUID projectId) {
+        List<Task> tasks = taskRepo.findTasksByProjectId(projectId);
+        return TaskMapper.toTaskResponseDTOs(tasks, ResponseStatus.SUCCESSFULLY_FOUND);
+    }
+
 }

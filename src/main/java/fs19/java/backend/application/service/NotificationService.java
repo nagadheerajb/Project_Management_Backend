@@ -10,4 +10,5 @@ public interface NotificationService {
     NotificationDTO getNotificationById(UUID id);
     List<NotificationDTO> getAllNotifications();
     void deleteNotification(UUID id);
+    void updateNotificationReadStatus(UUID notificationId, boolean isRead);
 }

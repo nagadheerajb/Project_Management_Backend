@@ -12,4 +12,6 @@ public interface CompanyService {
     CompanyResponseDTO getCompanyById(UUID id);
     List<CompanyResponseDTO> getAllCompanies();
     void deleteCompany(UUID id);
+    List<CompanyResponseDTO> getCompaniesOwnedByLoggedInUser(UUID userId);
+
 }

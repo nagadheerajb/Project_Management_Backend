@@ -17,6 +17,7 @@ public interface TaskRepository {
     Task findById(UUID taskId);
     List<Task> findByAssignedUserId(UUID userId);
     List<Task> findByCreatedUserId(UUID createdUserId);
+    List<Task> findTasksByProjectId(UUID projectId);
 
 
 }

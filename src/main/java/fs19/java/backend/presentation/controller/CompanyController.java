@@ -4,6 +4,8 @@ import fs19.java.backend.application.dto.company.CompanyRequestDTO;
 import fs19.java.backend.application.dto.company.CompanyResponseDTO;
 import fs19.java.backend.application.dto.company.CompanyUpdateDTO;
 import fs19.java.backend.application.service.CompanyService;
+import fs19.java.backend.config.SecurityConfig;
+import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,4 +75,19 @@ public class CompanyController {
         logger.info("Company deleted successfully with ID: {}", companyId);
         return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
     }
+
+    @Operation(summary = "Get companies owned by logged-in user", description = "Retrieves companies owned by the currently logged-in user.")
+    @GetMapping("/my-companies")
+    public ResponseEntity<GlobalResponse<List<CompanyResponseDTO>>> getCompaniesOwnedByLoggedInUser() {
+        logger.info("Received request to get companies owned by logged-in user");
+
+        // Assuming SecurityUtils.getCurrentUserId() fetches the logged-in user's ID
+        User currentUser = SecurityConfig.getCurrentUser();
+
+        List<CompanyResponseDTO> companies = companyService.getCompaniesOwnedByLoggedInUser(currentUser.getId());
+        logger.info("Companies owned by logged-in user retrieved successfully");
+
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), companies), HttpStatus.OK);
+    }
+
 }

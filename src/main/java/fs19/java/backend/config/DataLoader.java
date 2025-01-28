@@ -92,6 +92,12 @@ public class DataLoader implements CommandLineRunner {
             company.setCreatedDate(DateAndTime.getDateAndTime());
             Company saveCompany = companyJpaRepo.save(company);
 
+            Company company2 = new Company();
+            company2.setName("Company-B");
+            company2.setCreatedBy(user);
+            company2.setCreatedDate(DateAndTime.getDateAndTime());
+            Company saveCompany2 = companyJpaRepo.save(company2);
+
             // Step 3: Create roles (Admin, Member, etc.)
             Role adminRole = new Role();
             adminRole.setName(ADMIN_USER_NAME);
@@ -120,7 +126,7 @@ public class DataLoader implements CommandLineRunner {
             workspace2.setName("Workspace2");
             workspace2.setDescription("Workspace2");
             workspace2.setType(WorkspaceType.PUBLIC);
-            workspace2.setCompanyId(company);
+            workspace2.setCompanyId(saveCompany2);
             workspace2.setCreatedDate(DateAndTime.getDateAndTime());
             workspace2.setCreatedBy(user);
             Workspace saveWorkspace2 = workspaceJpaRepo.save(workspace2);
@@ -134,7 +140,7 @@ public class DataLoader implements CommandLineRunner {
             workspaceUserJpaRepo.save(adminWorkspaceUser);
 
             WorkspaceUser memberWorkspaceUser = new WorkspaceUser();
-            memberWorkspaceUser.setRole(saveMemberRole);
+            memberWorkspaceUser.setRole(saveAdminRole);
             memberWorkspaceUser.setUser(saveUser);
             memberWorkspaceUser.setWorkspace(saveWorkspace2);
             workspaceUserJpaRepo.save(memberWorkspaceUser);

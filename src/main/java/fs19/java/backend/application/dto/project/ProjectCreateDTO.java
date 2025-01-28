@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -25,14 +26,14 @@ public class ProjectCreateDTO {
   @Size(max = 100, message = "Project description must be less than 100 characters")
   private String description;
 
-  @Schema(type = "string", format = "string", description = "Start date of the project")
+  @Schema(type = "string", format = "date", description = "Start date of the project in YYYY-MM-DD format")
   @NotNull(message = "Start date is required")
   @FutureOrPresent(message = "Start date must be in the present or future")
-  private ZonedDateTime startDate;
+  private LocalDate startDate;
 
-  @Schema(type = "string", format = "string", description = "End date of the project")
+  @Schema(type = "string", format = "date", description = "End date of the project in YYYY-MM-DD format")
   @FutureOrPresent(message = "End date must be in the present or future")
-  private ZonedDateTime endDate;
+  private LocalDate endDate;
 
   @Schema(type = "uuid", format = "string", description = "User ID of the project creator")
   private UUID createdByUserId;

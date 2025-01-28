@@ -19,7 +19,10 @@ import fs19.java.backend.presentation.shared.exception.UserNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -114,5 +117,41 @@ public class CommentServiceImpl implements CommentService {
         eventPublisher.publishEvent(new GenericEvent<>(this, comment, EntityType.COMMENT, "Deleted"));
         //User createdBy = SecurityUtils.getCurrentUser();
         //activityLoggerService.logActivity(EntityType.COMPANY, id, ActionType.DELETED, createdBy.getId());
+    }
+
+    // New method to fetch all comments for a task
+    @Override
+    public Page<CommentResponseDTO> getAllCommentsForTask(UUID taskId, Pageable pageable) {
+        logger.info("Retrieving paginated comments for task with ID: {}", taskId);
+        Page<Comment> comments = commentRepository.findAllByTaskId(taskId, pageable);
+        Page<CommentResponseDTO> commentDTOs = comments.map(commentMapper::toDTO);
+        logger.info("Paginated comments for task retrieved successfully");
+        return commentDTOs;
+    }
+
+
+    // New method to bulk delete comments by task ID
+    @Override
+    @Transactional
+    public void deleteCommentsByTaskId(UUID taskId) {
+        logger.info("Deleting all comments for task with ID: {}", taskId);
+        List<Comment> comments = commentRepository.findAllByTaskId(taskId);
+        if (!comments.isEmpty()) {
+            commentRepository.deleteAllInBatchByTaskId(taskId); // Optimized bulk deletion
+            logger.info("All comments for task deleted successfully");
+            //eventPublisher.publishEvent(new GenericEvent<>(this, comments, EntityType.COMMENT, "Deleted"));
+        } else {
+            logger.warn("No comments found for task ID: {}", taskId);
+        }
+    }
+
+    // New method to support pagination and filtering
+    @Override
+    public Page<CommentResponseDTO> getAllComments(Pageable pageable) {
+        logger.info("Retrieving all comments with pagination and filtering");
+        Page<Comment> comments = commentRepository.findAll(pageable);
+        Page<CommentResponseDTO> commentDTOs = comments.map(commentMapper::toDTO);
+        logger.info("All comments retrieved successfully with pagination and filtering");
+        return commentDTOs;
     }
 }

@@ -10,16 +10,21 @@ import fs19.java.backend.infrastructure.JpaRepositories.TaskJpaRepo;
 import fs19.java.backend.infrastructure.JpaRepositories.UserJpaRepo;
 import fs19.java.backend.presentation.shared.exception.PermissionLevelException;
 import fs19.java.backend.presentation.shared.exception.TaskLevelException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Repository;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public class TaskRepoImpl implements TaskRepository {
+
+    private static final Logger logger = LogManager.getLogger(TaskRepoImpl.class);
 
     private final TaskJpaRepo taskJpaRepo;
     private final UserJpaRepo userJpaRepo;
@@ -46,17 +51,37 @@ public class TaskRepoImpl implements TaskRepository {
         if (task != null) {
             task.setName(taskRequestDTO.getName());
             task.setDescription(taskRequestDTO.getDescription());
-            task.setResolvedDate(taskRequestDTO.getResolvedDate());
-            task.setDueDate(taskRequestDTO.getDueDate());
+
+            // Convert LocalDate to ZonedDateTime
+            if (taskRequestDTO.getResolvedDate() != null) {
+                task.setResolvedDate(taskRequestDTO.getResolvedDate().atStartOfDay(ZoneId.systemDefault()));
+            }
+            if (taskRequestDTO.getDueDate() != null) {
+                task.setDueDate(taskRequestDTO.getDueDate().atTime(23, 59, 59).atZone(ZoneId.systemDefault()));
+            }
+
             task.setAttachments(taskRequestDTO.getAttachments());
             task.setPriority(taskRequestDTO.getPriority());
             task.setProject(project);
             task.setAssignedUser(assignedUser);
+
+            // Validate and set taskStatus
+            if (taskRequestDTO.getTaskStatus() != null) {
+                task.setTaskStatus(taskRequestDTO.getTaskStatus());
+            } else {
+                throw new IllegalArgumentException("Task status cannot be null during an update.");
+            }
+
+            // Log the final state of the task before saving
+            logger.debug("Final Task before saving: {}", task);
+
             return taskJpaRepo.save(task);
         } else {
-            throw new PermissionLevelException(" DB is empty: " + TaskLevelException.TASK_UPDATE);
+            throw new PermissionLevelException("Task not found: " + TaskLevelException.TASK_UPDATE);
         }
     }
+
+
 
     @Override
     public Task delete(UUID taskId) {
@@ -127,4 +152,9 @@ public class TaskRepoImpl implements TaskRepository {
         return projectJpaRepo.findById(companyId);
 
     }
+    @Override
+    public List<Task> findTasksByProjectId(UUID projectId) {
+        return taskJpaRepo.findByProjectId(projectId);
+    }
+
 }

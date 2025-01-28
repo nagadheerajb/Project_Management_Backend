@@ -22,7 +22,7 @@ public class DateAndTime {
     }
 
     public static Date getExpirationDate(){
-      return new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 14);
+      return new Date(System.currentTimeMillis() + 1000 * 60 * 60);
     }
 
     public static ZonedDateTime getExpiredDateAndTime() {

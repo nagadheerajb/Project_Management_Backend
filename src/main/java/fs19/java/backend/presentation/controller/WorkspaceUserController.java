@@ -3,6 +3,8 @@ package fs19.java.backend.presentation.controller;
 import fs19.java.backend.application.WorkspaceUserServiceImpl;
 import fs19.java.backend.application.dto.workspace_user.WorkspaceUserRequestDTO;
 import fs19.java.backend.application.dto.workspace_user.WorkspaceUserResponseDTO;
+import fs19.java.backend.config.SecurityConfig;
+import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -82,6 +84,33 @@ public class WorkspaceUserController {
     return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), workspaceUsers),
         HttpStatus.OK);
   }
+
+  @Operation(summary = "Get all workspaces by user ID")
+  @GetMapping("/user/{userId}")
+  public ResponseEntity<GlobalResponse<List<WorkspaceUserResponseDTO>>> getAllWorkspacesByUserId(
+          @PathVariable UUID userId) {
+    logger.info("Received request to get all workspaces for user ID: {}", userId);
+    List<WorkspaceUserResponseDTO> workspaces = workspaceUsersService.getAllWorkspacesByUserId(userId);
+    logger.info("Workspaces retrieved successfully for user ID: {}", userId);
+    return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), workspaces), HttpStatus.OK);
+  }
+
+  @Operation(summary = "Get all workspaces for the logged-in user")
+  @GetMapping("/my-workspaces")
+  public ResponseEntity<GlobalResponse<List<WorkspaceUserResponseDTO>>> getMyWorkspaces() {
+    // Use getCurrentUser() to fetch the logged-in user
+    User currentUser = SecurityConfig.getCurrentUser();
+    // Ensure the user is valid
+    if (currentUser == null || currentUser.getId() == null) {
+      throw new IllegalStateException("Unable to fetch the logged-in user.");
+    }
+
+    // Fetch workspaces for the logged-in user
+    List<WorkspaceUserResponseDTO> workspaces = workspaceUsersService.getAllWorkspacesByUserId(currentUser.getId());
+
+    return ResponseEntity.ok(new GlobalResponse<>(HttpStatus.OK.value(), workspaces));
+  }
+
 
   @Operation(summary = "Delete a workspace user")
   @DeleteMapping("/{workspaceUserId}")

@@ -36,4 +36,13 @@ public class WorkspaceResponseDTO {
 
     @Schema(type = "uuid", format = "uuid", description = "Unique identifier of the company")
     private UUID companyId;
+
+    @Schema(type = "string", format = "string", description = "Name of the company")
+    private String companyName; // Add company name
+
+    @Schema(type = "string", format = "string", description = "First name of the user who created the workspace")
+    private String firstName; // Add first name
+
+    @Schema(type = "string", format = "string", description = "Last name of the user who created the workspace")
+    private String lastName; // Add last name
 }

@@ -15,4 +15,6 @@ public class CompanyResponseDTO {
     private String name;
     private ZonedDateTime createdDate;
     private UUID createdBy;
+    private String firstName;
+    private String lastName;
 }

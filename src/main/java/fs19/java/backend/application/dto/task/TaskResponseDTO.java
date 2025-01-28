@@ -38,7 +38,7 @@ public class TaskResponseDTO {
     @Schema(type = "date", format = "date", description = "Task due date define here")
     private ZonedDateTime dueDate;
     @Schema(type = "Attachment", format = "Object", description = "Task attachments can add here")
-    private List<String> attachment;
+    private List<String> attachments;
     @Schema(type = "Enum", format = "Enum", description = "TaskStatus define here")
     private String taskStatus;
     @Schema(type = "uuid", format = "uuid", description = "Unique project id define here")
