@@ -8,6 +8,7 @@ public enum NotificationType {
     COMMENT_CREATED,
     COMMENT_UPDATED,
     COMMENT_DELETED,
+    COMMENT_ALL_DELETED,
     TASK_CREATED,
     TASK_UPDATED,
     TASK_DELETED,

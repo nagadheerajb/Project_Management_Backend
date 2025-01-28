@@ -4,6 +4,8 @@ import fs19.java.backend.application.UserDetailsServiceImpl;
 import fs19.java.backend.domain.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -34,6 +36,7 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final Logger logger = LogManager.getLogger(SecurityConfig.class);
     private final fs19.java.backend.config.CustomAuthenticationProvider customAuthenticationProvider;
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
@@ -83,7 +86,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     // 1. Public endpoints
                     auth
-                            .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+                            .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh-token").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/companies").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/workspaces").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
@@ -98,8 +101,25 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.GET, "/api/v1/users/me")
                             .authenticated();
 
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/companies/my-companies")
+                            .authenticated();
+
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/companies/**")
+                            .authenticated();
+
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/workspaces/**")
+                            .authenticated();
+
+                    auth.requestMatchers(HttpMethod.DELETE, "/api/v1/companies/**")
+                            .authenticated();
+
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/projects/workspace/**")
+                            .authenticated();
+
                     // 3. Role-based permissions from DB
                     for (SecurityRole rolePermission : rolePermissions) {
+//                        logger.info("Loading Role Permission: Method={}, Permission={}, Role={}",
+//                                rolePermission.getMethod(), rolePermission.getPermission(), rolePermission.getRole());
                         auth.requestMatchers(rolePermission.getMethod(), rolePermission.getPermission())
                                 .hasAuthority(rolePermission.getRole());
                     }
@@ -181,7 +201,7 @@ public class SecurityConfig {
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
         corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000")); // Add frontend domain
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type", "workspaceId"));
         corsConfiguration.setExposedHeaders(List.of("Authorization")); // Expose headers for frontend
         corsConfiguration.setAllowCredentials(true); // Allow cookies if needed

@@ -48,7 +48,7 @@ public class TaskServiceImpl implements TaskService {
         if (createdUserById.isPresent()) {
             User assignedUser = null;
             if (taskRequestDTO.getAssignedUserId() != null) {
-                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getCreatedUserId());
+                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getAssignedUserId());
                 if (assignedUserById.isEmpty()) {
                     logger.info("Assigned-User information not found {}", taskRequestDTO);
                     return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_LEVEL_ASSIGNED_USER_NOT_FOUND);
@@ -96,7 +96,7 @@ public class TaskServiceImpl implements TaskService {
         if (createdUserById.isPresent()) {
             User assignedUser = null;
             if (taskRequestDTO.getAssignedUserId() != null) {
-                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getCreatedUserId());
+                Optional<User> assignedUserById = taskRepo.findTaskUserByUserId(taskRequestDTO.getAssignedUserId());
                 if (assignedUserById.isEmpty()) {
                     logger.info("Assigned User-Not Found  {}", taskRequestDTO);
                     return TaskMapper.toTaskResponseDTO(new Task(), ResponseStatus.TASK_LEVEL_ASSIGNED_USER_NOT_FOUND);

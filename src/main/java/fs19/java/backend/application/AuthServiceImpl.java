@@ -16,7 +16,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Responsible to handle auth actions
@@ -80,6 +82,32 @@ public class AuthServiceImpl {
         logger.info("User authenticated successfully{}", accessToken);
         return UserMapper.toAuthResponseDTO(user.get(), accessToken);
     }
+
+    public AuthResponseDTO refreshToken(String currentToken) {
+        logger.info("Validating and refreshing token");
+
+        String currentToken1 = jwtValidator.removeBearerPrefix(currentToken);
+        // Validate the current token
+        String email = jwtValidator.extractUserEmail(currentToken1);
+        Optional<User> userOptional = authRepo.findByEmail(email);
+
+        if (userOptional.isEmpty()) {
+            throw new UserNotFoundException("User not found for the given token");
+        }
+
+        User user = userOptional.get();
+
+        // Extract linked workspaces (or other permissions) for the new token
+        List<UUID> workspaceIds = authRepo.findLinkWorkspaceIds(user.getId());
+
+        // Generate a new token
+        String newAccessToken = jwtValidator.generateToken(user, workspaceIds);
+
+        logger.info("Generated new token for user: {}", user.getEmail());
+
+        return UserMapper.toAuthResponseDTO(user, newAccessToken);
+    }
+
 
     public static void validateSignUpRequest(SignupRequestDTO signupRequestDTO) {
         if (signupRequestDTO.email() == null || signupRequestDTO.email().isEmpty()) {

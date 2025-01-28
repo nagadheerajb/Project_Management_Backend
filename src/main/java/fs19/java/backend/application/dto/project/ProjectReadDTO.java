@@ -18,6 +18,8 @@ public class ProjectReadDTO {
     private ZonedDateTime startDate;
     private ZonedDateTime endDate;
     private UUID createdByUserId;
+    private  String firstName;
+    private String lastName;
     private UUID workspaceId;
     private Boolean status;
 }

@@ -17,6 +17,8 @@ public class ProjectMapper {
         .startDate(project.getStartDate())
         .endDate(project.getEndDate())
         .createdByUserId(project.getCreatedByUser().getId())
+        .firstName(project.getCreatedByUser().getFirstName())
+        .lastName(project.getCreatedByUser().getLastName())
         .workspaceId(project.getWorkspace().getId())
         .status(project.getStatus())
         .build();

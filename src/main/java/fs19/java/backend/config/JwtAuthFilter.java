@@ -88,13 +88,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 4) Distinguish between /my-workspaces GET and all other endpoints
-            boolean isMyWorkspacesEndpoint = ("/api/v1/workspace-users/my-workspaces".equals(requestURI)
-                    && "GET".equalsIgnoreCase(httpMethod));
-            boolean isCurrentUserEndpoint = ("/api/v1/users/me".equals(requestURI)
-                    && "GET".equalsIgnoreCase(httpMethod));
-
-            if (isMyWorkspacesEndpoint || isCurrentUserEndpoint) {
+            if (isDynamicAuthenticatedEndpoint(requestURI, httpMethod)) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 if (jwtValidator.isTokenValidForNoWorkspace(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
@@ -168,4 +162,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/api/v1/invitation/");
     }
 
+    /**
+     * Check if the endpoint requires authentication and matches dynamic paths.
+     */
+    private boolean isDynamicAuthenticatedEndpoint(String requestURI, String httpMethod) {
+        return ("GET".equalsIgnoreCase(httpMethod) &&
+                (requestURI.matches("/api/v1/workspace-users/my-workspaces") ||
+                        requestURI.matches("/api/v1/users/me") ||
+                        requestURI.matches("/api/v1/companies/my-companies") ||
+                        requestURI.matches("/api/v1/companies/[0-9a-fA-F-]+") ||
+                        requestURI.matches("/api/v1/projects/workspace/[0-9a-fA-F-]+") ||
+                        requestURI.matches("/api/v1/workspaces/[0-9a-fA-F-]+"))) ||
+                ("DELETE".equalsIgnoreCase(httpMethod) &&
+                        requestURI.matches("/api/v1/companies/[0-9a-fA-F-]+")) ||
+                ("POST".equalsIgnoreCase(httpMethod) &&
+                        requestURI.matches("/api/v1/companies") ||
+                requestURI.matches("/api/v1/workspaces") );
+
+    }
 }

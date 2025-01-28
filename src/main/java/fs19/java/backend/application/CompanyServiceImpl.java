@@ -127,4 +127,21 @@ public class CompanyServiceImpl implements CompanyService {
         //User createdBy = SecurityUtils.getCurrentUser();
         //activityLoggerService.logActivity(EntityType.COMPANY, id, ActionType.DELETED, createdBy.getId());
     }
+
+    @Override
+    public List<CompanyResponseDTO> getCompaniesOwnedByLoggedInUser(UUID userId) {
+        logger.info("Retrieving companies owned by user with ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, userId)));
+        logger.info("User found: {}", user);
+
+        List<Company> ownedCompanies = companyRepository.findByCreatedBy(user);
+        logger.info("Companies owned by user retrieved: {}", ownedCompanies);
+
+        return ownedCompanies.stream()
+                .map(CompanyMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
 }
