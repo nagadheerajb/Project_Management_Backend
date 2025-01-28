@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,14 +35,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<GlobalResponse<Void>> handleGenericException(Exception ex) {
-        logger.error("Exception: {}", ex.getMessage(), ex);
-        ErrorItem error = new ErrorItem(ex.getMessage());
-        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), List.of(error));
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<GlobalResponse<Void>> handleUserNotFoundException(UserNotFoundException ex) {
         logger.error("UserNotFoundException: {}", ex.getMessage(), ex);
@@ -51,17 +44,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserAlreadyFoundException.class)
-    public ResponseEntity<GlobalResponse<Void>> handleUserNotFoundException(UserAlreadyFoundException ex) {
+    public ResponseEntity<GlobalResponse<Void>> handleUserAlreadyFoundException(UserAlreadyFoundException ex) {
+        logger.error("UserAlreadyFoundException: {}", ex.getMessage(), ex);
         ErrorItem error = new ErrorItem(ex.getMessage());
-        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_ACCEPTABLE.value(),
-                List.of(error));
-        return new ResponseEntity<>(response, HttpStatus.NOT_ACCEPTABLE);
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.CONFLICT.value(), List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
 
-    @ExceptionHandler({UserValidationException.class, MethodArgumentNotValidException.class})
-    public ResponseEntity<GlobalResponse<Void>> handleValidationException(Exception ex) {
-        logger.error("ValidationException: {}", ex.getMessage(), ex);
+    @ExceptionHandler(UserValidationException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleUserValidationException(UserValidationException ex) {
+        logger.error("UserValidationException: {}", ex.getMessage(), ex);
         ErrorItem error = new ErrorItem(ex.getMessage());
         GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.BAD_REQUEST.value(), List.of(error));
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -147,13 +140,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<GlobalResponse<Void>> UsernameNotFoundException(UsernameNotFoundException ex) {
-        logger.error("UserNot Found Exception: {}", ex.getMessage(), ex);
-        ErrorItem error = new ErrorItem(ex.getMessage());
-        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.PRECONDITION_REQUIRED.value(), List.of(error));
-        return new ResponseEntity<>(response, HttpStatus.PRECONDITION_REQUIRED);
-    }
 
     @ExceptionHandler(InvitationLevelException.class)
     public ResponseEntity<GlobalResponse<Void>> handleInvitationLevelException(InvitationLevelException ex) {
@@ -173,10 +159,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<GlobalResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorItem error = new ErrorItem(ex.getMessage());
-        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.BAD_REQUEST.value(),
-                List.of(error));
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        logger.error("IllegalArgumentException: {}", ex.getMessage(), ex);
+        ErrorItem error = new ErrorItem("Invalid request: " + ex.getMessage());
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.BAD_REQUEST.value(), List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(InvalidInvitationFoundException.class)
@@ -197,11 +183,39 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CredentialNotFoundException.class)
-    public ResponseEntity<GlobalResponse<Void>> handleCredentialDeniedException(CredentialNotFoundException ex) {
+    public ResponseEntity<GlobalResponse<Void>> handleCredentialNotFoundException(CredentialNotFoundException ex) {
+        logger.error("CredentialNotFoundException: {}", ex.getMessage(), ex);
         ErrorItem error = new ErrorItem(ex.getMessage());
-        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.FORBIDDEN.value(),
-                List.of(error));
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.FORBIDDEN.value(), List.of(error));
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleBadCredentialsException(BadCredentialsException ex) {
+        logger.error("BadCredentialsException: {}", ex.getMessage(), ex);
+        ErrorItem error = new ErrorItem(ex.getCause() instanceof UserValidationException
+                ? ex.getCause().getMessage()
+                : "Invalid email or password.");
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.UNAUTHORIZED.value(), List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+        logger.error("UsernameNotFoundException: {}", ex.getMessage(), ex);
+        ErrorItem error = new ErrorItem("User not found.");
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.NOT_FOUND.value(), List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<GlobalResponse<Void>> handleGenericException(Exception ex) {
+        logger.error("Unexpected Exception: {}", ex.getMessage(), ex);
+        ErrorItem error = new ErrorItem("An unexpected error occurred. Please try again later.");
+        GlobalResponse<Void> response = new GlobalResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), List.of(error));
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }

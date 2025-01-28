@@ -110,6 +110,9 @@ public class UserJpaRepoCustomImpl implements UserPermissionConfig {
             case DELETE -> {
                 return HttpMethod.DELETE;
             }
+            case PATCH -> {
+                return HttpMethod.PATCH;
+            }
 
         }
         return HttpMethod.GET;

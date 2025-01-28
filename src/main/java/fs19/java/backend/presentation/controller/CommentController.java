@@ -6,10 +6,14 @@ import fs19.java.backend.application.dto.comment.CommentUpdateDTO;
 import fs19.java.backend.application.service.CommentService;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -72,6 +76,33 @@ public class CommentController {
         logger.info("Received request to delete comment with ID: {}", commentId);
         commentService.deleteComment(commentId);
         logger.info("Comment deleted successfully with ID: {}", commentId);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
+    }
+
+    // New endpoint for fetching all comments for a task with sort parameter
+    @Operation(summary = "Get all comments for a task", description = "Fetches all comments for a specific task with pagination and sorting")
+    @GetMapping("/tasks/{taskId}/comments")
+    public ResponseEntity<GlobalResponse<Page<CommentResponseDTO>>> getAllCommentsForTask(
+            @PathVariable UUID taskId,
+            Pageable pageable,
+            @Parameter(
+                    description = "Sorting field and direction, e.g., 'createdDate,DESC'",
+                    schema = @Schema(type = "string", example = "createdDate,DESC")
+            )
+            @RequestParam(name = "sort", required = false) String sort) {
+        logger.info("Received request to get all comments for task with ID: {}", taskId);
+        logger.info("Sorting by: {}", sort);
+        Page<CommentResponseDTO> comments = commentService.getAllCommentsForTask(taskId, pageable);
+        logger.info("All comments for task retrieved successfully with pagination");
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), comments), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Bulk delete comments by task ID", description = "Deletes all comments for a specific task")
+    @DeleteMapping("/tasks/{taskId}/comments")
+    public ResponseEntity<GlobalResponse<Void>> deleteCommentsByTaskId(@PathVariable UUID taskId) {
+        logger.info("Received request to delete all comments for task with ID: {}", taskId);
+        commentService.deleteCommentsByTaskId(taskId);
+        logger.info("All comments for task deleted successfully");
         return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
     }
 }

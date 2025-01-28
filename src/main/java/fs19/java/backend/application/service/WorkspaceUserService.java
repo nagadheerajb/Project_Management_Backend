@@ -9,6 +9,7 @@ public interface WorkspaceUserService {
   WorkspaceUserResponseDTO createWorkspaceUser(WorkspaceUserRequestDTO workspaceUsersDTO);
   WorkspaceUserResponseDTO updateWorkspaceUser(UUID id, WorkspaceUserRequestDTO workspaceUsersDTO);
   WorkspaceUserResponseDTO getWorkspaceUserById(UUID id);
+  List<WorkspaceUserResponseDTO> getAllWorkspacesByUserId(UUID userId);
   List<WorkspaceUserResponseDTO> getAllWorkspacesUsers();
   void deleteWorkspace(UUID id);
 }

@@ -40,7 +40,7 @@ public class WorkspaceUser {
   @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
   private Role role;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "workspace_id", referencedColumnName = "id", nullable = false)
   private Workspace workspace;
 }

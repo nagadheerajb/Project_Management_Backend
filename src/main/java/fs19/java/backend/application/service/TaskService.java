@@ -15,6 +15,7 @@ public interface TaskService {
     TaskResponseDTO getById(UUID taskId);
     List<TaskResponseDTO> getByAssignedId(UUID userId);
     List<TaskResponseDTO> getByCreatedUserId(UUID createdUserId);
+    List<TaskResponseDTO> findTasksByProjectId(UUID projectId);
 }
 
 

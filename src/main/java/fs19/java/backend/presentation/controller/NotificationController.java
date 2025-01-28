@@ -71,4 +71,19 @@ public class NotificationController {
         logger.info("Notification deleted successfully with ID: {}", notificationId);
         return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
     }
+
+    @Operation(summary = "Update notification read status", description = "Marks a notification as read or unread by its ID.")
+    @PatchMapping("/{notificationId}/read-status")
+    public ResponseEntity<GlobalResponse<Void>> updateNotificationReadStatus(
+            @PathVariable UUID notificationId,
+            @RequestParam boolean isRead
+    ) {
+        logger.info("Received request to update read status for notification ID: {}", notificationId);
+
+        // Call the service to update the read status
+        notificationService.updateNotificationReadStatus(notificationId, isRead);
+
+        logger.info("Notification read status updated for ID: {}", notificationId);
+        return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
+    }
 }

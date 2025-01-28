@@ -3,6 +3,9 @@ package fs19.java.backend.presentation.controller;
 import fs19.java.backend.application.dto.user.UserCreateDTO;
 import fs19.java.backend.application.UserServiceImpl;
 import fs19.java.backend.application.dto.user.UserReadDTO;
+import fs19.java.backend.application.mapper.UserMapper;
+import fs19.java.backend.config.SecurityConfig;
+import fs19.java.backend.domain.entity.User;
 import fs19.java.backend.presentation.shared.response.GlobalResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -80,4 +83,13 @@ public class UserController {
     return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.NO_CONTENT.value(), null), HttpStatus.NO_CONTENT);
   }
 
+  @Operation(summary = "Get current logged-in user's details")
+  @GetMapping("/me")
+  public ResponseEntity<GlobalResponse<UserReadDTO>> getCurrentUser() {
+    logger.info("Received request to get current logged-in user's details");
+    User currentUser = SecurityConfig.getCurrentUser();
+    UserReadDTO userReadDTO = UserMapper.toReadDTO(currentUser);
+    logger.info("Current logged-in user details retrieved successfully: {}", userReadDTO);
+    return new ResponseEntity<>(new GlobalResponse<>(HttpStatus.OK.value(), userReadDTO), HttpStatus.OK);
+  }
 }

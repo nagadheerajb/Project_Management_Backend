@@ -29,7 +29,10 @@ public class WorkspaceMapper {
                 workspace.getType(),
                 workspace.getCreatedDate(),
                 workspace.getCreatedBy().getId(),
-                workspace.getCompanyId().getId()
+                workspace.getCompanyId().getId(),
+                workspace.getCompanyId().getName(),
+                workspace.getCreatedBy().getFirstName(), // Assuming User entity has getFirstName() method
+                workspace.getCreatedBy().getLastName()  // Assuming User entity has getLastName() method
         );
     }
 }

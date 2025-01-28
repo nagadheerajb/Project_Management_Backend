@@ -159,4 +159,20 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.deleteById(id);
         logger.info("Notification with ID: {} deleted successfully", id);
     }
+
+    @Override
+    public void updateNotificationReadStatus(UUID notificationId, boolean isRead) {
+        logger.info("Updating read status for notification with ID: {}", notificationId);
+
+        // Fetch the existing notification
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationNotFoundException(String.format(NOTIFICATION_NOT_FOUND_MESSAGE, notificationId)));
+
+        // Update the read status
+        notification.setRead(isRead);
+
+        // Save the updated notification
+        notificationRepository.save(notification);
+        logger.info("Notification read status updated successfully for ID: {}", notificationId);
+    }
 }
