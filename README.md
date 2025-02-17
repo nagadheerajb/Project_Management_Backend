@@ -4,6 +4,8 @@
 
 This project is a Spring Boot-based backend service designed for project management. It provides features such as secure JWT-based authentication, user and workspace management, task tracking, and real-time notifications. The application leverages PostgreSQL, Hibernate, JPA, and other modern tools to deliver a scalable and maintainable architecture.
 
+Refer to the [Frontend Link](https://github.com/nagadheerajb/Project_Management_Frontend).
+
 ## Features
 
 - **Authentication & Authorization**: Secure JWT-based authentication with role-based access control to manage user permissions effectively.
